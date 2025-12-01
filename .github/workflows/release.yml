@@ -30,13 +30,11 @@ jobs:
 
           # Linux x64
           - platform: ubuntu-22.04
-            args: --target x86_64-unknown-linux-gnu
-            rust_target: x86_64-unknown-linux-gnu
+            args: ''
 
-          # Linux ARM64
-          - platform: ubuntu-22.04
-            args: --target aarch64-unknown-linux-gnu
-            rust_target: aarch64-unknown-linux-gnu
+          # Linux ARM64 (native runner)
+          - platform: ubuntu-22.04-arm
+            args: ''
 
     runs-on: ${{ matrix.platform }}
 
@@ -49,10 +47,13 @@ jobs:
         with:
           targets: ${{ matrix.rust_target }}
 
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -60,9 +61,9 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      # Linux dependencies
-      - name: Install Linux dependencies (x64)
-        if: matrix.platform == 'ubuntu-22.04' && matrix.rust_target == 'x86_64-unknown-linux-gnu'
+      # Linux dependencies (both x64 and ARM64)
+      - name: Install Linux dependencies
+        if: contains(matrix.platform, 'ubuntu')
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -70,39 +71,8 @@ jobs:
             libappindicator3-dev \
             librsvg2-dev \
             patchelf \
-            libssl-dev
-
-      # Linux ARM64 cross-compilation dependencies
-      - name: Install Linux ARM64 cross-compilation dependencies
-        if: matrix.platform == 'ubuntu-22.04' && matrix.rust_target == 'aarch64-unknown-linux-gnu'
-        run: |
-          sudo dpkg --add-architecture arm64
-
-          # Add ARM64 repositories
-          sudo sed -i 's/^deb /deb [arch=amd64] /' /etc/apt/sources.list
-          echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list
-          echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-updates main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list
-          echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-security main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list
-
-          sudo apt-get update
-          sudo apt-get install -y \
-            gcc-aarch64-linux-gnu \
-            g++-aarch64-linux-gnu \
-            libc6-dev-arm64-cross \
-            libwebkit2gtk-4.1-dev:arm64 \
-            libssl-dev:arm64 \
-            libappindicator3-dev:arm64 \
-            librsvg2-dev:arm64 \
-            patchelf
-
-      - name: Setup Linux ARM64 environment
-        if: matrix.platform == 'ubuntu-22.04' && matrix.rust_target == 'aarch64-unknown-linux-gnu'
-        run: |
-          echo "PKG_CONFIG_SYSROOT_DIR=/usr/aarch64-linux-gnu" >> $GITHUB_ENV
-          echo "PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig" >> $GITHUB_ENV
-          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
-          echo "CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
-          echo "CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++" >> $GITHUB_ENV
+            libssl-dev \
+            xdg-utils
 
       - name: Install frontend dependencies
         run: pnpm install
@@ -111,6 +81,8 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'DNS Orchestrator ${{ github.ref_name }}'
@@ -124,3 +96,4 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+          updaterJsonPreferNsis: true

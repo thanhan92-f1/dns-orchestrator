@@ -122,6 +122,15 @@ export default {
     // About
     about: "About",
     version: "Version",
+    // Update
+    checkUpdate: "Check for Updates",
+    checking: "Checking...",
+    downloading: "Downloading",
+    updateAvailable: "Update Available",
+    updateAvailableDesc: "Version {{version}} is available",
+    noUpdate: "Up to date",
+    updateNow: "Update Now",
+    updateFailed: "Update check failed",
   },
   main: {
     selectDomain: "Please select a domain from the left",

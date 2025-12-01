@@ -122,6 +122,15 @@ export default {
     // About
     about: "关于",
     version: "版本",
+    // Update
+    checkUpdate: "检查更新",
+    checking: "检查中...",
+    downloading: "下载中",
+    updateAvailable: "发现新版本",
+    updateAvailableDesc: "新版本 {{version}} 可用",
+    noUpdate: "已是最新版本",
+    updateNow: "立即更新",
+    updateFailed: "更新检查失败",
   },
   main: {
     selectDomain: "请从左侧选择一个域名",

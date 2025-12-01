@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { useUpdaterStore } from "@/stores/updaterStore";
 import { supportedLanguages, type LanguageCode } from "@/i18n";
 import {
   Sheet,
@@ -7,10 +8,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Moon, Sun, Monitor, Languages } from "lucide-react";
+import { Moon, Sun, Monitor, Languages, RefreshCw, Download, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SettingsSheetProps {
@@ -21,6 +23,7 @@ interface SettingsSheetProps {
 export function SettingsSheet({ open, onOpenChange }: SettingsSheetProps) {
   const { t } = useTranslation();
   const { theme, language, setTheme, setLanguage } = useSettingsStore();
+  const { checking, downloading, progress, available, checkForUpdates, downloadAndInstall } = useUpdaterStore();
 
   const themes = [
     { id: "light" as const, label: t("settings.themeLight"), icon: Sun },
@@ -103,11 +106,55 @@ export function SettingsSheet({ open, onOpenChange }: SettingsSheetProps) {
           <Separator />
 
           {/* 关于 */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label className="text-base">{t("settings.about")}</Label>
             <div className="text-sm text-muted-foreground space-y-1">
               <p>{t("common.appName")}</p>
-              <p>{t("settings.version")} 0.0.1-alpha</p>
+              <p>{t("settings.version")} {__APP_VERSION__}</p>
+            </div>
+
+            {/* 检查更新 */}
+            <div className="flex items-center gap-2">
+              {available ? (
+                <Button
+                  size="sm"
+                  onClick={downloadAndInstall}
+                  disabled={downloading}
+                  className="gap-2"
+                >
+                  {downloading ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      {t("settings.downloading")} {progress}%
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4" />
+                      {t("settings.updateNow")} ({available.version})
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={checkForUpdates}
+                  disabled={checking}
+                  className="gap-2"
+                >
+                  {checking ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      {t("settings.checking")}
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4" />
+                      {t("settings.checkUpdate")}
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </div>
         </div>

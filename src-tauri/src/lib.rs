@@ -48,6 +48,8 @@ pub fn run() {
                 .level(log::LevelFilter::Debug)
                 .build(),
         )
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             // 创建 AppState（需要 AppHandle）
             let state = AppState::new(app.handle().clone());
