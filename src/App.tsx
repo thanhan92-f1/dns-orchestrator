@@ -23,17 +23,25 @@ function App() {
             duration: 10000,
             action: {
               label: t("settings.updateNow"),
-              onClick: () => downloadAndInstall(),
+              onClick: () => {
+                downloadAndInstall().catch((error) => {
+                  const errorMsg = error instanceof Error ? error.message : String(error);
+                  toast.error(t("settings.downloadFailed"), {
+                    description: t("settings.downloadFailedDesc", { error: errorMsg }),
+                  });
+                });
+              },
             },
           });
         }
-      } catch {
-        // 静默失败，不打扰用户
+      } catch (error) {
+        // 启动时的错误检查不打扰用户，仅记录日志
+        console.error("Update check failed:", error);
       }
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [checkForUpdates, downloadAndInstall, t]);
 
   return (
     <>

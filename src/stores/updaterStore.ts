@@ -2,15 +2,36 @@ import { create } from "zustand";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 
+const SKIPPED_VERSION_KEY = "dns-orchestrator-skipped-version";
+
+// 获取被跳过的版本
+const getSkippedVersion = (): string | null => {
+  return localStorage.getItem(SKIPPED_VERSION_KEY);
+};
+
+// 设置被跳过的版本
+const setSkippedVersion = (version: string): void => {
+  localStorage.setItem(SKIPPED_VERSION_KEY, version);
+};
+
+// 清除被跳过的版本
+const clearSkippedVersion = (): void => {
+  localStorage.removeItem(SKIPPED_VERSION_KEY);
+};
+
 interface UpdaterState {
   checking: boolean;
   downloading: boolean;
   progress: number;
   available: Update | null;
   error: string | null;
+  upToDate: boolean;
+  isPlatformUnsupported: boolean;
   checkForUpdates: () => Promise<Update | null>;
   downloadAndInstall: () => Promise<void>;
+  skipVersion: () => void;
   reset: () => void;
+  resetUpToDate: () => void;
 }
 
 export const useUpdaterStore = create<UpdaterState>((set, get) => ({
@@ -19,16 +40,49 @@ export const useUpdaterStore = create<UpdaterState>((set, get) => ({
   progress: 0,
   available: null,
   error: null,
+  upToDate: false,
+  isPlatformUnsupported: false,
 
   checkForUpdates: async () => {
-    set({ checking: true, error: null });
+    set({ checking: true, error: null, upToDate: false, isPlatformUnsupported: false });
     try {
+      console.log("[Updater] Checking for updates...");
       const update = await check();
-      set({ available: update, checking: false });
+      console.log("[Updater] Check result:", update);
+
+      if (update) {
+        // 检查该版本是否被跳过
+        const skippedVersion = getSkippedVersion();
+        console.log("[Updater] Skipped version:", skippedVersion);
+        console.log("[Updater] Update version:", update.version);
+
+        if (skippedVersion === update.version) {
+          // 版本被跳过，当作无更新处理
+          console.log("[Updater] Version is skipped, treating as no update");
+          set({ available: null, checking: false, upToDate: true });
+          return null;
+        }
+        console.log("[Updater] Update available:", update.version);
+        set({ available: update, checking: false, upToDate: false });
+      } else {
+        console.log("[Updater] No update available");
+        set({ available: null, checking: false, upToDate: true });
+      }
       return update;
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : String(e);
-      set({ error: errorMessage, checking: false });
+      console.error("[Updater] Check failed:", errorMessage, e);
+
+      // 判断是否为平台不支持错误
+      const isPlatformError = errorMessage.includes("platform") &&
+                             errorMessage.includes("was not found");
+
+      set({
+        error: errorMessage,
+        checking: false,
+        upToDate: false,
+        isPlatformUnsupported: isPlatformError
+      });
       return null;
     }
   },
@@ -43,28 +97,45 @@ export const useUpdaterStore = create<UpdaterState>((set, get) => ({
       let downloaded = 0;
       let contentLength = 0;
 
+      console.log("[Updater] Starting download and install...");
       await available.downloadAndInstall((event) => {
         switch (event.event) {
           case "Started":
             contentLength = event.data.contentLength ?? 0;
+            console.log("[Updater] Download started, size:", contentLength);
             break;
           case "Progress":
             downloaded += event.data.chunkLength;
             if (contentLength > 0) {
-              set({ progress: Math.round((downloaded / contentLength) * 100) });
+              const progress = Math.round((downloaded / contentLength) * 100);
+              set({ progress });
+              console.log("[Updater] Download progress:", progress + "%");
             }
             break;
           case "Finished":
+            console.log("[Updater] Download finished");
             set({ progress: 100 });
             break;
         }
       });
 
-      // 安装完成后重启应用
+      // 安装完成后清除跳过的版本记录，并重启应用
+      console.log("[Updater] Install complete, relaunching...");
+      clearSkippedVersion();
       await relaunch();
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : String(e);
+      console.error("[Updater] Download/install failed:", errorMessage, e);
       set({ error: errorMessage, downloading: false });
+      throw e; // 抛出错误以便上层处理
+    }
+  },
+
+  skipVersion: () => {
+    const { available } = get();
+    if (available) {
+      setSkippedVersion(available.version);
+      set({ available: null, upToDate: true });
     }
   },
 
@@ -75,6 +146,12 @@ export const useUpdaterStore = create<UpdaterState>((set, get) => ({
       progress: 0,
       available: null,
       error: null,
+      upToDate: false,
+      isPlatformUnsupported: false,
     });
+  },
+
+  resetUpToDate: () => {
+    set({ upToDate: false });
   },
 }));
