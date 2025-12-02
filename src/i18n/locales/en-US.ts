@@ -18,6 +18,7 @@ export default {
     type: "Type",
     noMatch: "No matching records",
     example: "e.g.",
+    copied: "Copied",
   },
   account: {
     title: "Accounts",
@@ -161,5 +162,33 @@ export default {
     downloading: "Downloading",
     retrying: "Retrying",
     installing: "Installing...",
+  },
+  toolbox: {
+    title: "Toolbox",
+    whoisLookup: "WHOIS Lookup",
+    dnsLookup: "DNS Lookup",
+    query: "Query",
+    domainPlaceholder: "Enter domain, e.g. example.com",
+    enterDomain: "Please enter a domain",
+    queryFailed: "Query failed",
+    noRecords: "No records found",
+    // History
+    history: "History",
+    noHistory: "No query history",
+    clearHistory: "Clear history",
+    justNow: "Just now",
+    minutesAgo: "{{count}} min ago",
+    hoursAgo: "{{count}} hours ago",
+    // WHOIS result
+    whois: {
+      domain: "Domain",
+      registrar: "Registrar",
+      creationDate: "Created",
+      expirationDate: "Expires",
+      updatedDate: "Updated",
+      nameServers: "Name Servers",
+      status: "Status",
+      rawData: "Raw Data",
+    },
   },
 };

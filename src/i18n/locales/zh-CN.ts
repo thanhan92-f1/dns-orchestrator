@@ -18,6 +18,7 @@ export default {
     type: "类型",
     noMatch: "没有匹配的记录",
     example: "例如",
+    copied: "已复制",
   },
   account: {
     title: "账号",
@@ -161,5 +162,33 @@ export default {
     downloading: "下载中",
     retrying: "重试中",
     installing: "正在安装...",
+  },
+  toolbox: {
+    title: "工具箱",
+    whoisLookup: "WHOIS 查询",
+    dnsLookup: "DNS 查询",
+    query: "查询",
+    domainPlaceholder: "输入域名，如 example.com",
+    enterDomain: "请输入域名",
+    queryFailed: "查询失败",
+    noRecords: "未找到记录",
+    // History
+    history: "历史记录",
+    noHistory: "暂无查询记录",
+    clearHistory: "清除历史",
+    justNow: "刚刚",
+    minutesAgo: "{{count}} 分钟前",
+    hoursAgo: "{{count}} 小时前",
+    // WHOIS result
+    whois: {
+      domain: "域名",
+      registrar: "注册商",
+      creationDate: "注册日期",
+      expirationDate: "到期日期",
+      updatedDate: "更新日期",
+      nameServers: "域名服务器",
+      status: "状态",
+      rawData: "原始数据",
+    },
   },
 };

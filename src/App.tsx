@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { SettingsPage } from "@/components/settings/SettingsPage";
+import { ToolboxPage } from "@/components/toolbox/ToolboxPage";
 import { StatusBar } from "@/components/ui/status-bar";
 import { Toaster } from "@/components/ui/sonner";
 import { initTheme } from "@/stores";
 import { useUpdaterStore } from "@/stores/updaterStore";
 
-type View = "main" | "settings";
+type View = "main" | "settings" | "toolbox";
 
 function App() {
   const { t } = useTranslation();
@@ -32,10 +33,12 @@ function App() {
 
   return (
     <>
-      <AppLayout>
-        {currentView === "settings" && (
+      <AppLayout onOpenToolbox={() => setCurrentView("toolbox")}>
+        {currentView === "settings" ? (
           <SettingsPage onBack={() => setCurrentView("main")} />
-        )}
+        ) : currentView === "toolbox" ? (
+          <ToolboxPage onBack={() => setCurrentView("main")} />
+        ) : null}
       </AppLayout>
       <StatusBar onOpenSettings={() => setCurrentView("settings")} />
       <Toaster richColors position="top-right" />

@@ -7,7 +7,7 @@ mod types;
 
 use std::sync::Arc;
 
-use commands::{account, dns, domain};
+use commands::{account, dns, domain, toolbox};
 use credentials::{CredentialStore, KeychainStore};
 use providers::ProviderRegistry;
 use storage::AccountStore;
@@ -77,6 +77,9 @@ pub fn run() {
             dns::create_dns_record,
             dns::update_dns_record,
             dns::delete_dns_record,
+            // Toolbox commands
+            toolbox::whois_lookup,
+            toolbox::dns_lookup,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -4,12 +4,13 @@ import { MainContent } from "./MainContent";
 
 interface AppLayoutProps {
   children?: ReactNode;
+  onOpenToolbox?: () => void;
 }
 
-export function AppLayout({ children }: AppLayoutProps) {
+export function AppLayout({ children, onOpenToolbox }: AppLayoutProps) {
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background pb-6">
-      <Sidebar />
+      <Sidebar onOpenToolbox={onOpenToolbox} />
       {children || <MainContent />}
     </div>
   );

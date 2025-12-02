@@ -182,3 +182,30 @@ pub struct ProviderMetadata {
     pub required_fields: Vec<ProviderCredentialField>,
     pub features: ProviderFeatures,
 }
+
+// ============ 工具箱相关类型 ============
+
+/// WHOIS 查询结果
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WhoisResult {
+    pub domain: String,
+    pub registrar: Option<String>,
+    pub creation_date: Option<String>,
+    pub expiration_date: Option<String>,
+    pub updated_date: Option<String>,
+    pub name_servers: Vec<String>,
+    pub status: Vec<String>,
+    pub raw: String,
+}
+
+/// DNS 查询记录结果
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DnsLookupRecord {
+    pub record_type: String,
+    pub name: String,
+    pub value: String,
+    pub ttl: u32,
+    pub priority: Option<u16>,
+}

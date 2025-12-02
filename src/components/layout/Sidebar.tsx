@@ -8,9 +8,13 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Globe, Plus } from "lucide-react";
+import { Globe, Plus, Wrench } from "lucide-react";
 
-export function Sidebar() {
+interface SidebarProps {
+  onOpenToolbox?: () => void;
+}
+
+export function Sidebar({ onOpenToolbox }: SidebarProps) {
   const { t } = useTranslation();
   const {
     accounts,
@@ -120,6 +124,19 @@ export function Sidebar() {
           </>
         )}
       </ScrollArea>
+
+      {/* 底部工具箱按钮 */}
+      <Separator />
+      <div className="p-3">
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-2"
+          onClick={onOpenToolbox}
+        >
+          <Wrench className="h-4 w-4" />
+          {t("toolbox.title")}
+        </Button>
+      </div>
 
       {/* Dialogs */}
       <AccountForm open={showAccountForm} onOpenChange={setShowAccountForm} />
