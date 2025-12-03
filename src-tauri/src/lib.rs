@@ -1,5 +1,6 @@
 mod commands;
 mod credentials;
+mod crypto;
 mod error;
 mod providers;
 mod storage;
@@ -50,6 +51,8 @@ pub fn run() {
         )
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
         .setup(|app| {
             // 创建 AppState（需要 AppHandle）
             let state = AppState::new(app.handle().clone());
@@ -69,6 +72,9 @@ pub fn run() {
             account::create_account,
             account::delete_account,
             account::list_providers,
+            account::export_accounts,
+            account::preview_import,
+            account::import_accounts,
             // Domain commands
             domain::list_domains,
             domain::get_domain,

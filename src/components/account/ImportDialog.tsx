@@ -1,0 +1,301 @@
+import { useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
+import { invoke } from "@tauri-apps/api/core";
+import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
+import { readTextFile } from "@tauri-apps/plugin-fs";
+import { toast } from "sonner";
+import type {
+  ApiResponse,
+  ImportPreview,
+  ImportResult,
+  ImportAccountsRequest,
+} from "@/types";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { ProviderIcon, getProviderName } from "./ProviderIcon";
+import { Loader2, Upload, FileText, Lock, AlertTriangle } from "lucide-react";
+
+interface ImportDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onImportSuccess: () => void;
+}
+
+type ImportStep = "select" | "password" | "preview" | "importing";
+
+export function ImportDialog({
+  open,
+  onOpenChange,
+  onImportSuccess,
+}: ImportDialogProps) {
+  const { t } = useTranslation();
+  const [step, setStep] = useState<ImportStep>("select");
+  const [fileContent, setFileContent] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [password, setPassword] = useState("");
+  const [preview, setPreview] = useState<ImportPreview | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const resetState = useCallback(() => {
+    setStep("select");
+    setFileContent(null);
+    setFileName(null);
+    setPassword("");
+    setPreview(null);
+    setIsLoading(false);
+  }, []);
+
+  const handleSelectFile = async () => {
+    try {
+      const filePath = await openFileDialog({
+        multiple: false,
+        filters: [{ name: "DNS Orchestrator Backup", extensions: ["dnso"] }],
+      });
+
+      if (!filePath) return;
+
+      setIsLoading(true);
+      const content = await readTextFile(filePath as string);
+      setFileContent(content);
+      setFileName((filePath as string).split("/").pop() || "file.json");
+
+      // 尝试预览（不带密码）
+      const response = await invoke<ApiResponse<ImportPreview>>(
+        "preview_import",
+        {
+          content,
+          password: null,
+        }
+      );
+
+      if (response.success && response.data) {
+        setPreview(response.data);
+        if (response.data.encrypted && !response.data.accounts) {
+          setStep("password");
+        } else {
+          setStep("preview");
+        }
+      } else {
+        toast.error(response.error?.message || t("import.invalidFile"));
+      }
+    } catch (err) {
+      toast.error(String(err));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDecrypt = async () => {
+    if (!fileContent || !password) return;
+
+    setIsLoading(true);
+    try {
+      const response = await invoke<ApiResponse<ImportPreview>>(
+        "preview_import",
+        {
+          content: fileContent,
+          password,
+        }
+      );
+
+      if (response.success && response.data?.accounts) {
+        setPreview(response.data);
+        setStep("preview");
+      } else {
+        toast.error(response.error?.message || t("import.decryptFailed"));
+      }
+    } catch (err) {
+      toast.error(String(err));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleImport = async () => {
+    if (!fileContent) return;
+
+    setStep("importing");
+    try {
+      const request: ImportAccountsRequest = {
+        content: fileContent,
+        password: preview?.encrypted ? password : undefined,
+      };
+
+      const response = await invoke<ApiResponse<ImportResult>>(
+        "import_accounts",
+        {
+          request,
+        }
+      );
+
+      if (response.success && response.data) {
+        const { successCount, failures } = response.data;
+        if (successCount > 0) {
+          toast.success(t("import.success", { count: successCount }));
+          onImportSuccess();
+        }
+        if (failures.length > 0) {
+          toast.warning(
+            t("import.partialFailure", { count: failures.length }),
+            {
+              description: failures
+                .map((f) => `${f.name}: ${f.reason}`)
+                .join("\n"),
+            }
+          );
+        }
+        onOpenChange(false);
+        resetState();
+      } else {
+        toast.error(response.error?.message || t("import.failed"));
+        setStep("preview");
+      }
+    } catch (err) {
+      toast.error(String(err));
+      setStep("preview");
+    }
+  };
+
+  const handleClose = () => {
+    onOpenChange(false);
+    resetState();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>{t("import.title")}</DialogTitle>
+          <DialogDescription>
+            {step === "select" && t("import.selectFileDesc")}
+            {step === "password" && t("import.enterPasswordDesc")}
+            {step === "preview" && t("import.previewDesc")}
+            {step === "importing" && t("import.importingDesc")}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="py-4">
+          {/* Step 1: 选择文件 */}
+          {step === "select" && (
+            <div className="flex flex-col items-center justify-center gap-4 py-8">
+              <div className="rounded-full bg-muted p-4">
+                <Upload className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <Button onClick={handleSelectFile} disabled={isLoading}>
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <FileText className="h-4 w-4 mr-2" />
+                )}
+                {t("import.selectFile")}
+              </Button>
+            </div>
+          )}
+
+          {/* Step 2: 输入密码 */}
+          {step === "password" && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 p-3 rounded-md bg-muted">
+                <Lock className="h-4 w-4" />
+                <span className="text-sm">{t("import.fileEncrypted")}</span>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="import-password">{t("import.password")}</Label>
+                <Input
+                  id="import-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t("import.passwordPlaceholder")}
+                  onKeyDown={(e) => e.key === "Enter" && handleDecrypt()}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: 预览 */}
+          {step === "preview" && preview?.accounts && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">{fileName}</span>
+                <Badge variant="secondary">
+                  {t("import.accountCount", { count: preview.accountCount })}
+                </Badge>
+              </div>
+              <ScrollArea className="h-[200px] rounded-md border p-3">
+                <div className="space-y-2">
+                  {preview.accounts.map((account, index) => (
+                    <div key={index} className="flex items-center gap-3 py-1">
+                      <ProviderIcon
+                        provider={account.provider}
+                        className="h-4 w-4"
+                      />
+                      <span className="flex-1 truncate text-sm">
+                        {account.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {getProviderName(account.provider)}
+                      </span>
+                      {account.hasConflict && (
+                        <span title={t("import.nameConflict")}>
+                          <AlertTriangle className="h-4 w-4 text-warning" />
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+              {preview.accounts.some((a) => a.hasConflict) && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  {t("import.conflictNote")}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Step 4: 导入中 */}
+          {step === "importing" && (
+            <div className="flex flex-col items-center justify-center gap-4 py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">
+                {t("import.importing")}
+              </p>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          {step !== "importing" && (
+            <Button variant="outline" onClick={handleClose}>
+              {t("common.cancel")}
+            </Button>
+          )}
+          {step === "password" && (
+            <Button onClick={handleDecrypt} disabled={!password || isLoading}>
+              {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {t("import.decrypt")}
+            </Button>
+          )}
+          {step === "preview" && (
+            <Button onClick={handleImport}>
+              <Upload className="h-4 w-4 mr-2" />
+              {t("import.importButton")}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

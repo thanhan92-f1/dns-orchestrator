@@ -10,6 +10,7 @@ const PROVIDER_ICONS: Record<string, React.ComponentType<{ className?: string }>
   cloudflare: Cloud,
   aliyun: Server,
   dnspod: Server,
+  huaweicloud: Server,
 };
 
 export function ProviderIcon({ provider, className }: ProviderIconProps) {
@@ -23,6 +24,7 @@ export function getProviderName(provider: string): string {
     cloudflare: "Cloudflare",
     aliyun: "阿里云",
     dnspod: "DNSPod",
+    huaweicloud: "华为云",
   };
   return PROVIDER_NAMES[provider] || provider;
 }

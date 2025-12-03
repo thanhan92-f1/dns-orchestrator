@@ -6,19 +6,15 @@ const MAX_HISTORY_ITEMS = 50;
 
 interface ToolboxState {
   history: QueryHistoryItem[];
-  pendingQuery: QueryHistoryItem | null;
   addHistory: (item: Omit<QueryHistoryItem, "id" | "timestamp">) => void;
   removeHistory: (id: string) => void;
   clearHistory: () => void;
-  setPendingQuery: (item: QueryHistoryItem) => void;
-  clearPendingQuery: () => void;
 }
 
 export const useToolboxStore = create<ToolboxState>()(
   persist(
     (set) => ({
       history: [],
-      pendingQuery: null,
 
       addHistory: (item) =>
         set((state) => {
@@ -63,10 +59,6 @@ export const useToolboxStore = create<ToolboxState>()(
         })),
 
       clearHistory: () => set({ history: [] }),
-
-      setPendingQuery: (item) => set({ pendingQuery: item }),
-
-      clearPendingQuery: () => set({ pendingQuery: null }),
     }),
     {
       name: "toolbox-history",

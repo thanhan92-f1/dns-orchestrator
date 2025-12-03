@@ -3,12 +3,14 @@ import { useTranslation } from "react-i18next";
 import { useAccountStore, useDomainStore } from "@/stores";
 import { AccountList } from "@/components/account/AccountList";
 import { AccountForm } from "@/components/account/AccountForm";
+import { ExportDialog } from "@/components/account/ExportDialog";
+import { ImportDialog } from "@/components/account/ImportDialog";
 import { DomainList } from "@/components/domain/DomainList";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Globe, Plus, Wrench } from "lucide-react";
+import { Globe, Plus, Wrench, Download, Upload } from "lucide-react";
 
 interface SidebarProps {
   onOpenToolbox?: () => void;
@@ -25,6 +27,12 @@ export function Sidebar({ onOpenToolbox, onNavigateToMain }: SidebarProps) {
     fetchAccounts,
     selectAccount,
     deleteAccount,
+    isExportDialogOpen,
+    isImportDialogOpen,
+    openExportDialog,
+    closeExportDialog,
+    openImportDialog,
+    closeImportDialog,
   } = useAccountStore();
   const {
     domains,
@@ -74,15 +82,39 @@ export function Sidebar({ onOpenToolbox, onNavigateToMain }: SidebarProps) {
         {/* 账号列表 */}
         <div className="p-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-medium text-muted-foreground">{t("account.title")}</h2>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => setShowAccountForm(true)}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+            <h2 className="text-sm font-medium text-muted-foreground">
+              {t("account.title")}
+            </h2>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={openExportDialog}
+                disabled={accounts.length === 0}
+                title={t("export.title")}
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={openImportDialog}
+                title={t("import.title")}
+              >
+                <Upload className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => setShowAccountForm(true)}
+                title={t("account.create")}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
           {isAccountLoading ? (
             <div className="space-y-2">
@@ -144,6 +176,16 @@ export function Sidebar({ onOpenToolbox, onNavigateToMain }: SidebarProps) {
 
       {/* Dialogs */}
       <AccountForm open={showAccountForm} onOpenChange={setShowAccountForm} />
+      <ExportDialog
+        open={isExportDialogOpen}
+        onOpenChange={closeExportDialog}
+        accounts={accounts}
+      />
+      <ImportDialog
+        open={isImportDialogOpen}
+        onOpenChange={closeImportDialog}
+        onImportSuccess={fetchAccounts}
+      />
     </aside>
   );
 }

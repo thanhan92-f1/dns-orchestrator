@@ -290,11 +290,11 @@ export function DnsRecordTable({ accountId, domainId, supportsProxy }: DnsRecord
 
       {/* Table */}
       <div className="flex-1 min-h-0 overflow-auto">
-        <Table className="min-w-[700px]">
+        <Table>
             <TableHeader className="sticky top-0 z-10 bg-background">
               <TableRow>
                 <TableHead
-                  className="w-24 cursor-pointer select-none hover:bg-muted/50"
+                  className="w-16 cursor-pointer select-none hover:bg-muted/50"
                   onClick={() => handleSort("type")}
                 >
                   <div className="flex items-center">
@@ -303,7 +303,7 @@ export function DnsRecordTable({ accountId, domainId, supportsProxy }: DnsRecord
                   </div>
                 </TableHead>
                 <TableHead
-                  className="w-40 cursor-pointer select-none hover:bg-muted/50"
+                  className="w-28 cursor-pointer select-none hover:bg-muted/50"
                   onClick={() => handleSort("name")}
                 >
                   <div className="flex items-center">
@@ -321,7 +321,7 @@ export function DnsRecordTable({ accountId, domainId, supportsProxy }: DnsRecord
                   </div>
                 </TableHead>
                 <TableHead
-                  className="w-24 cursor-pointer select-none hover:bg-muted/50"
+                  className="w-20 cursor-pointer select-none hover:bg-muted/50"
                   onClick={() => handleSort("ttl")}
                 >
                   <div className="flex items-center">
@@ -329,8 +329,8 @@ export function DnsRecordTable({ accountId, domainId, supportsProxy }: DnsRecord
                     <SortIcon field="ttl" />
                   </div>
                 </TableHead>
-                {supportsProxy && <TableHead className="w-20">{t("dns.proxy")}</TableHead>}
-                <TableHead className="w-24 text-right">{t("dns.actions")}</TableHead>
+                {supportsProxy && <TableHead className="w-12">{t("dns.proxy")}</TableHead>}
+                <TableHead className="w-16 text-right">{t("dns.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

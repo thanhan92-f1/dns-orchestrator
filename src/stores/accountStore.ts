@@ -11,12 +11,18 @@ interface AccountState {
   isLoading: boolean;
   isDeleting: boolean;
   error: string | null;
+  isExportDialogOpen: boolean;
+  isImportDialogOpen: boolean;
 
   fetchAccounts: () => Promise<void>;
   fetchProviders: () => Promise<void>;
   createAccount: (request: CreateAccountRequest) => Promise<Account | null>;
   deleteAccount: (id: string) => Promise<boolean>;
   selectAccount: (id: string | null) => void;
+  openExportDialog: () => void;
+  closeExportDialog: () => void;
+  openImportDialog: () => void;
+  closeImportDialog: () => void;
 }
 
 export const useAccountStore = create<AccountState>((set) => ({
@@ -26,6 +32,8 @@ export const useAccountStore = create<AccountState>((set) => ({
   isLoading: false,
   isDeleting: false,
   error: null,
+  isExportDialogOpen: false,
+  isImportDialogOpen: false,
 
   fetchAccounts: async () => {
     set({ isLoading: true, error: null });
@@ -119,4 +127,9 @@ export const useAccountStore = create<AccountState>((set) => ({
   },
 
   selectAccount: (id) => set({ selectedAccountId: id }),
+
+  openExportDialog: () => set({ isExportDialogOpen: true }),
+  closeExportDialog: () => set({ isExportDialogOpen: false }),
+  openImportDialog: () => set({ isImportDialogOpen: true }),
+  closeImportDialog: () => set({ isImportDialogOpen: false }),
 }));

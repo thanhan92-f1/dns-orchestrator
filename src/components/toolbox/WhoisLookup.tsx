@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
@@ -7,33 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Search, ChevronDown, ChevronUp } from "lucide-react";
+import { HistoryChips } from "./HistoryChips";
 import type { ApiResponse, WhoisResult } from "@/types";
 
 export function WhoisLookup() {
   const { t } = useTranslation();
-  const { addHistory, pendingQuery, clearPendingQuery } = useToolboxStore();
+  const { addHistory } = useToolboxStore();
   const [domain, setDomain] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<WhoisResult | null>(null);
   const [showRaw, setShowRaw] = useState(false);
-  const shouldTriggerLookup = useRef(false);
-
-  // 监听历史记录点击
-  useEffect(() => {
-    if (pendingQuery && pendingQuery.type === "whois") {
-      setDomain(pendingQuery.query);
-      shouldTriggerLookup.current = true;
-      clearPendingQuery();
-    }
-  }, [pendingQuery, clearPendingQuery]);
-
-  // domain 变化后触发查询
-  useEffect(() => {
-    if (shouldTriggerLookup.current && domain) {
-      shouldTriggerLookup.current = false;
-      handleLookup();
-    }
-  }, [domain]);
 
   const handleLookup = async () => {
     if (!domain.trim()) {
@@ -92,6 +75,14 @@ export function WhoisLookup() {
             <span className="ml-2">{t("toolbox.query")}</span>
           </Button>
         </div>
+
+        {/* 历史记录 */}
+        <HistoryChips
+          type="whois"
+          onSelect={(item) => {
+            setDomain(item.query);
+          }}
+        />
 
         {/* 查询结果 */}
         {result && (

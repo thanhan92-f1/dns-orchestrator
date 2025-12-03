@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
@@ -22,37 +22,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Loader2, Search } from "lucide-react";
+import { HistoryChips } from "./HistoryChips";
 import type { ApiResponse, DnsLookupRecord, DnsLookupType } from "@/types";
 import { DNS_RECORD_TYPES } from "@/types";
 
 export function DnsLookup() {
   const { t } = useTranslation();
-  const { addHistory, pendingQuery, clearPendingQuery } = useToolboxStore();
+  const { addHistory } = useToolboxStore();
   const [domain, setDomain] = useState("");
   const [recordType, setRecordType] = useState<DnsLookupType>("ALL");
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<DnsLookupRecord[]>([]);
-  const shouldTriggerLookup = useRef(false);
-
-  // 监听历史记录点击
-  useEffect(() => {
-    if (pendingQuery && pendingQuery.type === "dns") {
-      setDomain(pendingQuery.query);
-      if (pendingQuery.recordType) {
-        setRecordType(pendingQuery.recordType as DnsLookupType);
-      }
-      shouldTriggerLookup.current = true;
-      clearPendingQuery();
-    }
-  }, [pendingQuery, clearPendingQuery]);
-
-  // domain 变化后触发查询
-  useEffect(() => {
-    if (shouldTriggerLookup.current && domain) {
-      shouldTriggerLookup.current = false;
-      handleLookup();
-    }
-  }, [domain]);
 
   const handleLookup = async () => {
     if (!domain.trim()) {
@@ -140,6 +120,17 @@ export function DnsLookup() {
             <span className="ml-2">{t("toolbox.query")}</span>
           </Button>
         </div>
+
+        {/* 历史记录 */}
+        <HistoryChips
+          type="dns"
+          onSelect={(item) => {
+            setDomain(item.query);
+            if (item.recordType) {
+              setRecordType(item.recordType as DnsLookupType);
+            }
+          }}
+        />
 
         {/* 查询结果 */}
         {results.length > 0 && (
