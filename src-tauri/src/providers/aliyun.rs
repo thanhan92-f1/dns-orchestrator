@@ -4,7 +4,7 @@ use hmac::{Hmac, Mac};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use super::DnsProvider;
 use crate::error::{DnsError, Result};
@@ -14,8 +14,77 @@ use crate::types::{
 
 const ALIYUN_DNS_HOST: &str = "alidns.cn-hangzhou.aliyuncs.com";
 const ALIYUN_DNS_VERSION: &str = "2015-01-09";
+/// 空 body 的 SHA256 hash (固定值)
+const EMPTY_BODY_SHA256: &str = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
 type HmacSha256 = Hmac<Sha256>;
+
+/// RFC3986 URL 编码
+fn url_encode(s: &str) -> String {
+    let mut result = String::new();
+    for c in s.chars() {
+        match c {
+            'A'..='Z' | 'a'..='z' | '0'..='9' | '-' | '_' | '.' | '~' => {
+                result.push(c);
+            }
+            _ => {
+                for byte in c.to_string().as_bytes() {
+                    result.push_str(&format!("%{:02X}", byte));
+                }
+            }
+        }
+    }
+    result
+}
+
+/// 将 serde_json::Value 展平为 key-value 对 (处理嵌套对象)
+fn flatten_value(prefix: &str, value: &serde_json::Value, result: &mut BTreeMap<String, String>) {
+    match value {
+        serde_json::Value::Object(map) => {
+            for (k, v) in map {
+                let new_key = if prefix.is_empty() {
+                    k.clone()
+                } else {
+                    format!("{}.{}", prefix, k)
+                };
+                flatten_value(&new_key, v, result);
+            }
+        }
+        serde_json::Value::Array(arr) => {
+            for (i, v) in arr.iter().enumerate() {
+                let new_key = format!("{}.{}", prefix, i + 1);
+                flatten_value(&new_key, v, result);
+            }
+        }
+        serde_json::Value::String(s) => {
+            result.insert(prefix.to_string(), s.clone());
+        }
+        serde_json::Value::Number(n) => {
+            result.insert(prefix.to_string(), n.to_string());
+        }
+        serde_json::Value::Bool(b) => {
+            result.insert(prefix.to_string(), b.to_string());
+        }
+        serde_json::Value::Null => {}
+    }
+}
+
+/// 将结构体序列化为排序后的 query string
+fn serialize_to_query_string<T: Serialize>(params: &T) -> Result<String> {
+    let value = serde_json::to_value(params)
+        .map_err(|e| DnsError::SerializationError(e.to_string()))?;
+
+    let mut flat_map = BTreeMap::new();
+    flatten_value("", &value, &mut flat_map);
+
+    let query_string = flat_map
+        .iter()
+        .map(|(k, v)| format!("{}={}", url_encode(k), url_encode(v)))
+        .collect::<Vec<_>>()
+        .join("&");
+
+    Ok(query_string)
+}
 
 // ============ 阿里云 API 响应结构 ============
 
@@ -155,16 +224,13 @@ impl AliyunProvider {
 
     /// 生成 ACS3-HMAC-SHA256 签名
     /// 参考: https://www.alibabacloud.com/help/zh/sdk/product-overview/v3-request-structure-and-signature
-    fn sign(&self, action: &str, payload: &str, timestamp: &str, nonce: &str) -> String {
-        // 1. 构造规范化请求头
-        let hashed_payload = hex::encode(Sha256::digest(payload.as_bytes()));
-
-        // 按字母顺序排列 headers
+    fn sign(&self, action: &str, query_string: &str, timestamp: &str, nonce: &str) -> String {
+        // 1. 构造规范化请求头 (使用空 body 的 hash)
         let canonical_headers = format!(
             "host:{}\nx-acs-action:{}\nx-acs-content-sha256:{}\nx-acs-date:{}\nx-acs-signature-nonce:{}\nx-acs-version:{}\n",
             ALIYUN_DNS_HOST,
             action,
-            hashed_payload,
+            EMPTY_BODY_SHA256,
             timestamp,
             nonce,
             ALIYUN_DNS_VERSION
@@ -173,10 +239,10 @@ impl AliyunProvider {
         let signed_headers =
             "host;x-acs-action;x-acs-content-sha256;x-acs-date;x-acs-signature-nonce;x-acs-version";
 
-        // 2. 构造规范化请求
+        // 2. 构造规范化请求 (RPC 风格: 参数在 query string 中)
         let canonical_request = format!(
-            "POST\n/\n\n{}\n{}\n{}",
-            canonical_headers, signed_headers, hashed_payload
+            "POST\n/\n{}\n{}\n{}\n{}",
+            query_string, canonical_headers, signed_headers, EMPTY_BODY_SHA256
         );
 
         log::debug!("CanonicalRequest:\n{}", canonical_request);
@@ -206,36 +272,41 @@ impl AliyunProvider {
         mac.finalize().into_bytes().to_vec()
     }
 
-    /// 执行阿里云 API 请求
+    /// 执行阿里云 API 请求 (RPC 风格: 参数通过 query string 传递)
     async fn request<T: for<'de> Deserialize<'de>, B: Serialize>(
         &self,
         action: &str,
-        body: &B,
+        params: &B,
     ) -> Result<T> {
-        let payload = serde_json::to_string(body)
-            .map_err(|e| DnsError::SerializationError(e.to_string()))?;
+        // 1. 序列化参数为 query string
+        let query_string = serialize_to_query_string(params)?;
 
         let timestamp = Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
         let nonce = uuid::Uuid::new_v4().to_string();
-        let authorization = self.sign(action, &payload, &timestamp, &nonce);
-        let hashed_payload = hex::encode(Sha256::digest(payload.as_bytes()));
 
-        let url = format!("https://{}", ALIYUN_DNS_HOST);
+        // 2. 生成签名 (使用 query string)
+        let authorization = self.sign(action, &query_string, &timestamp, &nonce);
+
+        // 3. 构造 URL (参数在 query string 中)
+        let url = if query_string.is_empty() {
+            format!("https://{}/", ALIYUN_DNS_HOST)
+        } else {
+            format!("https://{}/?{}", ALIYUN_DNS_HOST, query_string)
+        };
+
         log::debug!("POST {} Action: {}", url, action);
-        log::debug!("Request Body: {}", payload);
 
+        // 4. 发送请求 (body 为空)
         let response = self
             .client
             .post(&url)
-            .header("Content-Type", "application/json; charset=utf-8")
             .header("Host", ALIYUN_DNS_HOST)
             .header("x-acs-action", action)
             .header("x-acs-version", ALIYUN_DNS_VERSION)
             .header("x-acs-date", &timestamp)
             .header("x-acs-signature-nonce", &nonce)
-            .header("x-acs-content-sha256", &hashed_payload)
+            .header("x-acs-content-sha256", EMPTY_BODY_SHA256)
             .header("Authorization", authorization)
-            .body(payload)
             .send()
             .await
             .map_err(|e| DnsError::ApiError(format!("请求失败: {}", e)))?;
@@ -367,7 +438,7 @@ impl DnsProvider for AliyunProvider {
 
         let req = DescribeDomainsRequest {
             page_number: 1,
-            page_size: 500, // 阿里云最大支持 500
+            page_size: 100, // 阿里云最大支持 100
         };
 
         let response: DescribeDomainsResponse =
@@ -418,7 +489,7 @@ impl DnsProvider for AliyunProvider {
         let req = DescribeDomainRecordsRequest {
             domain_name: domain_info.name,
             page_number: 1,
-            page_size: 500,
+            page_size: 100,
         };
 
         let response: DescribeDomainRecordsResponse =
