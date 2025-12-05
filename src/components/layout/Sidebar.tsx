@@ -7,17 +7,23 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import { cn } from "@/lib/utils"
 import { useAccountStore, useDomainStore } from "@/stores"
-import { Download, Globe, Plus, Upload, Wrench } from "lucide-react"
+import { Download, Globe, Plus, Settings, Upload, Wrench, X } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 interface SidebarProps {
   onOpenToolbox?: () => void
   onNavigateToMain?: () => void
+  onOpenSettings?: () => void
+  /** 关闭 Sidebar（移动端使用） */
+  onClose?: () => void
+  /** 是否为移动端模式（在 Sheet 中显示） */
+  isMobile?: boolean
 }
 
-export function Sidebar({ onOpenToolbox, onNavigateToMain }: SidebarProps) {
+export function Sidebar({ onOpenToolbox, onNavigateToMain, onOpenSettings, onClose, isMobile = false }: SidebarProps) {
   const { t } = useTranslation()
   const {
     accounts,
@@ -72,18 +78,20 @@ export function Sidebar({ onOpenToolbox, onNavigateToMain }: SidebarProps) {
   }, [selectedAccountId, fetchDomains, clearDomains])
 
   return (
-    <aside className="flex w-64 flex-col border-r bg-sidebar">
-      {/* Header */}
-      <div className="border-b p-4">
-        <div className="flex items-center gap-2">
-          <Globe className="h-6 w-6 text-primary" />
-          <h1 className="font-semibold text-lg">{t("common.appName")}</h1>
+    <aside className={cn("flex h-full flex-col border-r bg-sidebar", isMobile ? "w-full" : "w-64")}>
+      {/* Header - 仅桌面端显示 */}
+      {!isMobile && (
+        <div className="border-b p-4">
+          <div className="flex items-center gap-2">
+            <Globe className="h-6 w-6 text-primary" />
+            <h1 className="font-semibold text-lg">{t("common.appName")}</h1>
+          </div>
         </div>
-      </div>
+      )}
 
       <ScrollArea className="flex-1">
         {/* 账号列表 */}
-        <div className="p-4">
+        <div className={cn("p-4", isMobile && "p-3")}>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-medium text-muted-foreground text-sm">{t("account.title")}</h2>
             <div className="flex items-center gap-1">
@@ -115,6 +123,17 @@ export function Sidebar({ onOpenToolbox, onNavigateToMain }: SidebarProps) {
               >
                 <Plus className="h-4 w-4" />
               </Button>
+              {isMobile && onClose && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={onClose}
+                  title={t("common.close")}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
           {isAccountLoading ? (
@@ -137,7 +156,7 @@ export function Sidebar({ onOpenToolbox, onNavigateToMain }: SidebarProps) {
         {selectedAccountId && (
           <>
             <Separator />
-            <div className="p-4">
+            <div className={cn("p-4", isMobile && "p-3")}>
               <h2 className="mb-3 font-medium text-muted-foreground text-sm">
                 {t("domain.title")}
               </h2>
@@ -167,11 +186,18 @@ export function Sidebar({ onOpenToolbox, onNavigateToMain }: SidebarProps) {
 
       {/* 底部工具箱按钮 */}
       <Separator />
-      <div className="p-3">
+      <div className={cn("space-y-1 p-3", isMobile && "p-2")}>
         <Button variant="ghost" className="w-full justify-start gap-2" onClick={onOpenToolbox}>
           <Wrench className="h-4 w-4" />
           {t("toolbox.title")}
         </Button>
+        {/* 移动端显示设置按钮（桌面端通过 StatusBar 访问） */}
+        {isMobile && (
+          <Button variant="ghost" className="w-full justify-start gap-2" onClick={onOpenSettings}>
+            <Settings className="h-4 w-4" />
+            {t("settings.title")}
+          </Button>
+        )}
       </div>
 
       {/* Dialogs */}

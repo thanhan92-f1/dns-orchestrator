@@ -13,9 +13,9 @@ export function ToolboxPage({ onBack }: ToolboxPageProps) {
   const { t } = useTranslation()
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-4 border-b bg-background px-6 py-4">
+      <div className="flex items-center gap-3 border-b bg-background px-4 py-3 sm:gap-4 sm:px-6 sm:py-4">
         <Button variant="ghost" size="icon" onClick={onBack}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -26,8 +26,8 @@ export function ToolboxPage({ onBack }: ToolboxPageProps) {
       </div>
 
       {/* Content */}
-      <ScrollArea className="flex-1">
-        <div className="mx-auto max-w-4xl space-y-6 p-6">
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="mx-auto max-w-4xl space-y-4 p-4 sm:space-y-6 sm:p-6">
           <WhoisLookup />
           <DnsLookup />
         </div>

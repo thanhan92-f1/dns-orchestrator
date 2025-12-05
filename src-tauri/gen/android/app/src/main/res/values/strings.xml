@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">DNS Orchestrator</string>
+    <string name="main_activity_title">DNS Orchestrator</string>
+</resources>

@@ -1,6 +1,7 @@
 use hickory_resolver::{
     config::{ResolverConfig, ResolverOpts},
-    TokioAsyncResolver,
+    name_server::TokioConnectionProvider,
+    TokioResolver,
 };
 use regex::Regex;
 use whois_rust::{WhoIs, WhoIsLookupOptions};
@@ -154,7 +155,10 @@ pub async fn dns_lookup(
     domain: String,
     record_type: String,
 ) -> Result<ApiResponse<Vec<DnsLookupRecord>>, String> {
-    let resolver = TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default());
+    let provider = TokioConnectionProvider::default();
+    let resolver = TokioResolver::builder_with_config(ResolverConfig::default(), provider)
+        .with_options(ResolverOpts::default())
+        .build();
 
     let mut records: Vec<DnsLookupRecord> = Vec::new();
     let record_type_upper = record_type.to_uppercase();
@@ -261,7 +265,7 @@ pub async fn dns_lookup(
                 .await
             {
                 for record in response.record_iter() {
-                    if let Some(cname) = record.data().and_then(|d| d.as_cname()) {
+                    if let Some(cname) = record.data().as_cname() {
                         records.push(DnsLookupRecord {
                             record_type: "CNAME".to_string(),
                             name: domain.clone(),
@@ -331,7 +335,7 @@ pub async fn dns_lookup(
                 .await
             {
                 for record in response.record_iter() {
-                    if let Some(caa) = record.data().and_then(|d| d.as_caa()) {
+                    if let Some(caa) = record.data().as_caa() {
                         let value = format!(
                             "{} {} \"{}\"",
                             if caa.issuer_critical() { 128 } else { 0 },
@@ -355,7 +359,7 @@ pub async fn dns_lookup(
                 .await
             {
                 for record in response.record_iter() {
-                    if let Some(ptr) = record.data().and_then(|d| d.as_ptr()) {
+                    if let Some(ptr) = record.data().as_ptr() {
                         records.push(DnsLookupRecord {
                             record_type: "PTR".to_string(),
                             name: domain.clone(),

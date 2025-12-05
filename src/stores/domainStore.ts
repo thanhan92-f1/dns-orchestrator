@@ -34,10 +34,13 @@ export const useDomainStore = create<DomainState>((set, get) => ({
   currentAccountId: null,
 
   fetchDomains: async (accountId) => {
+    const { currentAccountId, selectedDomainId } = get()
+    const isAccountChanged = currentAccountId !== accountId
+
     set({
       isLoading: true,
       error: null,
-      selectedDomainId: null,
+      selectedDomainId: isAccountChanged ? null : selectedDomainId,
       domains: [],
       page: 1,
       hasMore: false,

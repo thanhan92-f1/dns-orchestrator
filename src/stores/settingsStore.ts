@@ -52,6 +52,10 @@ export const useSettingsStore = create<SettingsState>((set) => ({
 // 初始化主题
 export function initTheme() {
   const theme = (localStorage.getItem("theme") as Theme) || "system"
+
+  // 同步更新 store 状态（确保 store 与 localStorage 一致）
+  useSettingsStore.setState({ theme })
+
   const root = document.documentElement
 
   if (theme === "system") {

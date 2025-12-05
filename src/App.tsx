@@ -3,6 +3,7 @@ import { SettingsPage } from "@/components/settings/SettingsPage"
 import { ToolboxPage } from "@/components/toolbox/ToolboxPage"
 import { Toaster } from "@/components/ui/sonner"
 import { StatusBar } from "@/components/ui/status-bar"
+import { useIsMobile } from "@/hooks/useMediaQuery"
 import { initTheme, useDomainStore } from "@/stores"
 import { useUpdaterStore } from "@/stores/updaterStore"
 import { useEffect, useState } from "react"
@@ -15,9 +16,13 @@ function App() {
   const { checkForUpdates } = useUpdaterStore()
   const { selectDomain } = useDomainStore()
   const [currentView, setCurrentView] = useState<View>("main")
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     initTheme()
+
+    // 移动端不检查更新（Android 使用应用商店或手动更新）
+    if (isMobile) return
 
     // 启动后延迟 3 秒检查更新（静默检查，状态栏会自动显示）
     const timer = setTimeout(async () => {
@@ -30,7 +35,12 @@ function App() {
     }, 3000)
 
     return () => clearTimeout(timer)
-  }, [checkForUpdates, t])
+  }, [checkForUpdates, t, isMobile])
+
+  const handleOpenSettings = () => {
+    selectDomain(null)
+    setCurrentView("settings")
+  }
 
   return (
     <>
@@ -40,6 +50,7 @@ function App() {
           setCurrentView("toolbox")
         }}
         onNavigateToMain={() => setCurrentView("main")}
+        onOpenSettings={handleOpenSettings}
       >
         {currentView === "settings" ? (
           <SettingsPage onBack={() => setCurrentView("main")} />
@@ -47,13 +58,10 @@ function App() {
           <ToolboxPage onBack={() => setCurrentView("main")} />
         ) : null}
       </AppLayout>
-      <StatusBar
-        onOpenSettings={() => {
-          selectDomain(null)
-          setCurrentView("settings")
-        }}
-      />
-      <Toaster richColors position="top-right" />
+      {/* 桌面端显示底部状态栏 */}
+      {!isMobile && <StatusBar onOpenSettings={handleOpenSettings} />}
+      {/* Toast 位置：移动端底部居中，桌面端右上角 */}
+      <Toaster richColors position={isMobile ? "bottom-center" : "top-right"} />
     </>
   )
 }

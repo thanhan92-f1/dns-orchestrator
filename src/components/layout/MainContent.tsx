@@ -21,11 +21,11 @@ export function MainContent() {
 
   if (!(selectedDomainId && selectedAccountId)) {
     return (
-      <main className="flex flex-1 items-center justify-center bg-muted/30">
+      <main className="flex flex-1 flex-col items-center justify-center bg-muted/30 p-6">
         <div className="text-center text-muted-foreground">
-          <Globe className="mx-auto mb-4 h-12 w-12 opacity-50" />
-          <p className="text-lg">{t("main.selectDomain")}</p>
-          <p className="mt-1 text-sm">{t("main.selectDomainHint")}</p>
+          <Globe className="mx-auto mb-4 h-16 w-16 opacity-40" />
+          <p className="text-lg font-medium">{t("main.selectDomain")}</p>
+          <p className="mt-2 text-sm max-w-[280px]">{t("main.selectDomainHint")}</p>
         </div>
       </main>
     )

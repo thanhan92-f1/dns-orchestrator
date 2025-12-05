@@ -115,9 +115,9 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   ]
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div className="flex flex-1 flex-col overflow-hidden min-h-0">
       {/* Header */}
-      <div className="flex items-center gap-4 border-b bg-background px-6 py-4">
+      <div className="flex items-center gap-2 border-b bg-background px-4 py-3 sm:gap-4 sm:px-6 sm:py-4">
         <Button variant="ghost" size="icon" onClick={onBack}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -125,54 +125,54 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
       </div>
 
       {/* Content */}
-      <ScrollArea className="flex-1">
-        <div className="mx-auto max-w-3xl space-y-10 p-8">
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="mx-auto max-w-3xl space-y-6 p-4 sm:space-y-10 sm:p-8">
           {/* 主题设置 */}
-          <div className="space-y-5">
+          <div className="space-y-3 sm:space-y-5">
             <div>
               <h3 className="mb-1 font-semibold text-lg">{t("settings.appearance")}</h3>
               <p className="text-muted-foreground text-sm">{t("settings.theme")}</p>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4">
               {themes.map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
                   type="button"
                   onClick={() => setTheme(id)}
                   className={cn(
-                    "flex flex-col items-center gap-3 rounded-xl border-2 p-5 transition-all",
+                    "flex flex-col items-center gap-2 sm:gap-3 rounded-xl border-2 p-3 sm:p-5 transition-all",
                     theme === id
                       ? "border-primary bg-primary/5 shadow-sm"
                       : "border-border bg-card hover:border-accent-foreground/20 hover:bg-accent"
                   )}
                 >
-                  <Icon className="h-7 w-7" />
-                  <span className="font-medium text-sm">{label}</span>
+                  <Icon className="h-5 w-5 sm:h-7 sm:w-7" />
+                  <span className="font-medium text-xs sm:text-sm whitespace-nowrap">{label}</span>
                 </button>
               ))}
             </div>
           </div>
 
           {/* 语言设置 */}
-          <div className="space-y-5">
+          <div className="space-y-3 sm:space-y-5">
             <div>
               <h3 className="mb-1 font-semibold text-lg">{t("settings.language")}</h3>
               <p className="text-muted-foreground text-sm">{t("settings.languageDesc")}</p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4">
               {supportedLanguages.map((lang) => (
                 <button
                   key={lang.code}
                   type="button"
                   onClick={() => setLanguage(lang.code as LanguageCode)}
                   className={cn(
-                    "flex items-center gap-3 rounded-xl border-2 p-4 transition-all",
+                    "flex items-center gap-2 rounded-xl border-2 p-3 transition-all sm:gap-3 sm:p-4",
                     language === lang.code
                       ? "border-primary bg-primary/5 shadow-sm"
                       : "border-border bg-card hover:border-accent-foreground/20 hover:bg-accent"
                   )}
                 >
-                  <Languages className="h-5 w-5" />
+                  <Languages className="h-4 w-4 sm:h-5 sm:w-5" />
                   <span className="font-medium text-sm">{lang.name}</span>
                 </button>
               ))}
@@ -180,12 +180,12 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
           </div>
 
           {/* 通知设置 */}
-          <div className="space-y-5">
+          <div className="space-y-3 sm:space-y-5">
             <div>
               <h3 className="mb-1 font-semibold text-lg">{t("settings.notifications")}</h3>
               <p className="text-muted-foreground text-sm">{t("settings.notificationsDesc")}</p>
             </div>
-            <div className="flex items-center justify-between rounded-xl border bg-card p-5">
+            <div className="flex items-center justify-between rounded-xl border bg-card p-4 sm:p-5">
               <div className="space-y-1.5">
                 <Label htmlFor="notifications" className="font-medium text-sm">
                   {t("settings.operationNotifications")}
@@ -199,12 +199,12 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
           </div>
 
           {/* 关于 */}
-          <div className="space-y-5">
+          <div className="space-y-3 sm:space-y-5">
             <div>
               <h3 className="mb-1 font-semibold text-lg">{t("settings.about")}</h3>
               <p className="text-muted-foreground text-sm">{t("settings.aboutDesc")}</p>
             </div>
-            <div className="space-y-5 rounded-xl border bg-card p-5">
+            <div className="space-y-4 rounded-xl border bg-card p-4 sm:space-y-5 sm:p-5">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <p className="font-medium">{t("common.appName")}</p>

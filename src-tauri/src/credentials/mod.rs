@@ -1,6 +1,14 @@
+// 桌面端使用系统 Keychain
+#[cfg(not(target_os = "android"))]
 mod keychain;
-
+#[cfg(not(target_os = "android"))]
 pub use keychain::KeychainStore;
+
+// Android 端使用内存存储（临时方案，后续可接入 Stronghold）
+#[cfg(target_os = "android")]
+mod android;
+#[cfg(target_os = "android")]
+pub use android::AndroidCredentialStore;
 
 use crate::error::Result;
 use std::collections::HashMap;

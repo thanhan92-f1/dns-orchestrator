@@ -58,15 +58,16 @@ export function WhoisLookup() {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* 查询输入 */}
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Input
             placeholder={t("toolbox.domainPlaceholder")}
             value={domain}
             onChange={(e) => setDomain(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={isLoading}
+            className="flex-1"
           />
-          <Button onClick={handleLookup} disabled={isLoading}>
+          <Button onClick={handleLookup} disabled={isLoading} className="w-full sm:w-auto">
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
@@ -87,7 +88,7 @@ export function WhoisLookup() {
         {/* 查询结果 */}
         {result && (
           <div className="space-y-3 pt-2">
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 sm:gap-4">
               <div>
                 <span className="text-muted-foreground">{t("toolbox.whois.domain")}:</span>
                 <span className="ml-2 font-medium">{result.domain}</span>

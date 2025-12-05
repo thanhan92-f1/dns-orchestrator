@@ -82,8 +82,46 @@ export function DnsLookup() {
         <CardTitle className="text-lg">{t("toolbox.dnsLookup")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* 查询输入 */}
-        <div className="flex gap-2">
+        {/* 查询输入 - 移动端两行 */}
+        <div className="flex flex-col gap-2 sm:hidden">
+          <div className="flex gap-2">
+            <Input
+              placeholder={t("toolbox.domainPlaceholder")}
+              value={domain}
+              onChange={(e) => setDomain(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={isLoading}
+              className="flex-1"
+            />
+            <Select
+              value={recordType}
+              onValueChange={(v) => setRecordType(v as DnsLookupType)}
+              disabled={isLoading}
+            >
+              <SelectTrigger className="w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                {DNS_RECORD_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button onClick={handleLookup} disabled={isLoading} className="w-full">
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Search className="h-4 w-4" />
+            )}
+            <span className="ml-2">{t("toolbox.query")}</span>
+          </Button>
+        </div>
+
+        {/* 查询输入 - 桌面端一行 */}
+        <div className="hidden gap-2 sm:flex">
           <Input
             placeholder={t("toolbox.domainPlaceholder")}
             value={domain}
@@ -129,9 +167,41 @@ export function DnsLookup() {
           }}
         />
 
-        {/* 查询结果 */}
+        {/* 查询结果 - 移动端卡片 */}
         {results.length > 0 && (
-          <div className="rounded-md border">
+          <div className="space-y-2 sm:hidden">
+            {results.map((record, index) => (
+              <div
+                key={index}
+                className="rounded-lg border bg-card p-3"
+                onClick={() => {
+                  navigator.clipboard.writeText(record.value)
+                  toast.success(t("common.copied"))
+                }}
+              >
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="rounded bg-primary/10 px-2 py-0.5 font-medium text-primary text-xs">
+                    {record.recordType}
+                  </span>
+                  <span className="text-muted-foreground text-xs">TTL: {record.ttl}</span>
+                  {record.priority != null && (
+                    <span className="text-muted-foreground text-xs">
+                      {t("dns.priority")}: {record.priority}
+                    </span>
+                  )}
+                </div>
+                <div className="break-all font-mono text-sm">{record.name}</div>
+                <div className="break-all font-mono text-muted-foreground text-sm">
+                  {record.value}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 查询结果 - 桌面端 Table */}
+        {results.length > 0 && (
+          <div className="hidden rounded-md border sm:block">
             <Table>
               <TableHeader>
                 <TableRow>
