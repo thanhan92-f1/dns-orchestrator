@@ -4,9 +4,21 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: '选择要构建的平台'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - desktop
+          - android
 
 jobs:
   release:
+    if: github.event_name == 'push' || inputs.platform == 'desktop' || inputs.platform == 'all'
     permissions:
       contents: write
     strategy:
@@ -82,7 +94,9 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install
 
+      # Tag push: Build and release
       - name: Build and release
+        if: github.event_name == 'push'
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -104,8 +118,22 @@ jobs:
           args: ${{ matrix.args }}
           updaterJsonPreferNsis: true
 
+      # Manual trigger: Build only (no release)
+      - name: Build only
+        if: github.event_name == 'workflow_dispatch'
+        run: pnpm tauri build ${{ matrix.args }}
+
+      - name: Upload artifacts
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.platform }}-${{ matrix.rust_target || 'default' }}
+          path: |
+            src-tauri/target/release/bundle/
+
   # Android 构建
   release-android:
+    if: github.event_name == 'push' || inputs.platform == 'android' || inputs.platform == 'all'
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -162,10 +190,15 @@ jobs:
         env:
           NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+          SIGNING_STORE_FILE: app/release.keystore
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: |
           pnpm tauri android build --apk true
 
       - name: Rename APK
+        if: github.event_name == 'push'
         run: |
           VERSION="${{ github.ref_name }}"
           VERSION="${VERSION#v}"  # 去掉 v 前缀
@@ -177,6 +210,7 @@ jobs:
           fi
 
       - name: Upload APK to Release
+        if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
           files: |
@@ -185,8 +219,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Upload APK as Artifact
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: src-tauri/gen/android/app/build/outputs/apk/universal/release/*.apk
+
   # 更新 latest.json 添加 Android 平台
   update-latest-json:
+    if: github.event_name == 'push'
     needs: [release, release-android]
     permissions:
       contents: write
