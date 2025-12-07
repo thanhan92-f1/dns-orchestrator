@@ -893,7 +893,7 @@ pub async fn ssl_check(
             }
         };
 
-        let cert_der = &certs[0].0;
+        let cert_der = certs[0].as_ref();
 
         // 解析证书
         let (_, cert) = match X509Certificate::from_der(cert_der) {
@@ -949,7 +949,7 @@ pub async fn ssl_check(
         let certificate_chain: Vec<CertChainItem> = certs
             .iter()
             .filter_map(|c| {
-                X509Certificate::from_der(&c.0)
+                X509Certificate::from_der(c.as_ref())
                     .ok()
                     .map(|(_, parsed)| CertChainItem {
                         subject: parsed.subject().to_string(),

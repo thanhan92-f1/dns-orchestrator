@@ -98,6 +98,7 @@ jobs:
       - name: Read release notes
         if: github.event_name == 'push'
         id: release-notes
+        shell: bash
         run: |
           VERSION="${{ github.ref_name }}"
           NOTES_FILE="docs/release-note/${VERSION}.md"
