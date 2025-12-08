@@ -1,7 +1,21 @@
+import {
+  ArrowLeft,
+  Download,
+  Globe,
+  Loader2,
+  MoreHorizontal,
+  Plus,
+  Trash2,
+  TriangleAlert,
+  Upload,
+  Users,
+} from "lucide-react"
+import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { AccountForm } from "@/components/account/AccountForm"
 import { ExportDialog } from "@/components/account/ExportDialog"
 import { ImportDialog } from "@/components/account/ImportDialog"
-import { ProviderIcon, getProviderName } from "@/components/account/ProviderIcon"
+import { getProviderName, ProviderIcon } from "@/components/account/ProviderIcon"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,20 +38,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useAccountStore } from "@/stores"
 import type { Account } from "@/types"
-import {
-  ArrowLeft,
-  Download,
-  Globe,
-  Loader2,
-  MoreHorizontal,
-  Plus,
-  Trash2,
-  TriangleAlert,
-  Upload,
-  Users,
-} from "lucide-react"
-import { useEffect, useState } from "react"
-import { useTranslation } from "react-i18next"
 
 interface AccountsPageProps {
   onBack: () => void

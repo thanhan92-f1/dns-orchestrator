@@ -1,6 +1,6 @@
-import { useSettingsStore } from "@/stores"
 import { CircleCheck, Info, LoaderCircle, OctagonX, TriangleAlert } from "lucide-react"
 import { Toaster as Sonner } from "sonner"
+import { useSettingsStore } from "@/stores"
 
 type ToasterProps = React.ComponentProps<typeof Sonner>
 

@@ -341,11 +341,13 @@ impl CloudflareProvider {
     }
 
     /// 将 Cloudflare zone 转换为 Domain
+    /// Cloudflare 状态：active, pending, initializing, moved
     fn zone_to_domain(&self, zone: CloudflareZone) -> Domain {
         let status = match zone.status.as_str() {
             "active" => DomainStatus::Active,
-            "pending" => DomainStatus::Pending,
-            _ => DomainStatus::Error,
+            "pending" | "initializing" => DomainStatus::Pending,
+            "moved" => DomainStatus::Paused,
+            _ => DomainStatus::Unknown,
         };
 
         Domain {

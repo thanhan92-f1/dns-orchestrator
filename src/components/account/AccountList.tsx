@@ -1,3 +1,6 @@
+import { Loader2, MoreHorizontal, Trash2, TriangleAlert } from "lucide-react"
+import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,10 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import type { Account } from "@/types"
-import { Loader2, MoreHorizontal, Trash2, TriangleAlert } from "lucide-react"
-import { useState } from "react"
-import { useTranslation } from "react-i18next"
-import { ProviderIcon, getProviderName } from "./ProviderIcon"
+import { getProviderName, ProviderIcon } from "./ProviderIcon"
 
 interface AccountListProps {
   accounts: Account[]

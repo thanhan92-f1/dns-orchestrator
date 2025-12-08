@@ -1,3 +1,5 @@
+import { MoreHorizontal, Pencil, Shield, ShieldOff, Trash2 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -10,8 +12,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import type { DnsRecord } from "@/types"
-import { MoreHorizontal, Pencil, Shield, ShieldOff, Trash2 } from "lucide-react"
-import { useTranslation } from "react-i18next"
 
 interface DnsRecordCardProps {
   record: DnsRecord

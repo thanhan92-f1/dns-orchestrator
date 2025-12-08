@@ -285,7 +285,7 @@ impl DnspodProvider {
             "ENABLE" | "enable" => DomainStatus::Active,
             "PAUSE" | "pause" => DomainStatus::Paused,
             "SPAM" | "spam" => DomainStatus::Error,
-            _ => DomainStatus::Pending,
+            _ => DomainStatus::Unknown,
         }
     }
 

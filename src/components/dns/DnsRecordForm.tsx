@@ -1,3 +1,6 @@
+import { Loader2 } from "lucide-react"
+import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -24,9 +27,6 @@ import type {
   UpdateDnsRecordRequest,
 } from "@/types"
 import { RECORD_TYPE_INFO, TTL_OPTIONS } from "@/types/dns"
-import { Loader2 } from "lucide-react"
-import { useState } from "react"
-import { useTranslation } from "react-i18next"
 
 interface DnsRecordFormProps {
   accountId: string

@@ -1,7 +1,7 @@
-import { useToolboxStore } from "@/stores"
-import type { QueryHistoryItem } from "@/types"
 import { X } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { useToolboxStore } from "@/stores"
+import type { QueryHistoryItem } from "@/types"
 
 interface HistoryChipsProps {
   type: "whois" | "dns" | "ip" | "ssl"

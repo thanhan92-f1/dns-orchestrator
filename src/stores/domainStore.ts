@@ -1,6 +1,6 @@
-import type { ApiResponse, Domain, PaginatedResponse } from "@/types"
 import { invoke } from "@tauri-apps/api/core"
 import { create } from "zustand"
+import type { ApiResponse, Domain, PaginatedResponse } from "@/types"
 
 const PAGE_SIZE = 20
 

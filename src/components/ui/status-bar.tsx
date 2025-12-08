@@ -1,7 +1,7 @@
-import { cn } from "@/lib/utils"
-import { useUpdaterStore } from "@/stores/updaterStore"
 import { Check, Download, Loader2, RefreshCw } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { cn } from "@/lib/utils"
+import { useUpdaterStore } from "@/stores/updaterStore"
 
 type StatusType = "idle" | "checking" | "available" | "downloading" | "retrying" | "installing"
 

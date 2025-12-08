@@ -1,3 +1,6 @@
+import { invoke } from "@tauri-apps/api/core"
+import { toast } from "sonner"
+import { create } from "zustand"
 import type {
   ApiResponse,
   BatchDeleteRequest,
@@ -7,9 +10,6 @@ import type {
   PaginatedResponse,
   UpdateDnsRecordRequest,
 } from "@/types"
-import { invoke } from "@tauri-apps/api/core"
-import { toast } from "sonner"
-import { create } from "zustand"
 
 const PAGE_SIZE = 20
 

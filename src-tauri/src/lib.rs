@@ -210,7 +210,9 @@ fn restore_accounts(state: &AppState) -> crate::error::Result<()> {
 
     for account in &mut accounts {
         // 3.1 从已加载的凭证中获取该账户的凭证
-        let credentials = if let Some(creds) = all_credentials.get(&account.id) { creds.clone() } else {
+        let credentials = if let Some(creds) = all_credentials.get(&account.id) {
+            creds.clone()
+        } else {
             log::warn!(
                 "No credentials found for account {}: credential not in store",
                 account.id
@@ -264,9 +266,7 @@ fn restore_accounts(state: &AppState) -> crate::error::Result<()> {
         *accounts_guard = accounts;
     });
 
-    log::info!(
-        "Account restoration complete: {restored_count} succeeded, {failed_count} failed"
-    );
+    log::info!("Account restoration complete: {restored_count} succeeded, {failed_count} failed");
 
     if restored_count == 0 && failed_count > 0 {
         log::error!("All accounts failed to restore. Please check Keychain access permissions.");

@@ -1,3 +1,6 @@
+import { Eye, EyeOff, Loader2 } from "lucide-react"
+import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -16,9 +19,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useAccountStore } from "@/stores"
-import { Eye, EyeOff, Loader2 } from "lucide-react"
-import { useEffect, useState } from "react"
-import { useTranslation } from "react-i18next"
 import { ProviderIcon } from "./ProviderIcon"
 
 interface AccountFormProps {

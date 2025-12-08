@@ -423,12 +423,23 @@ impl HuaweicloudProvider {
     }
 
     /// 将华为云域名状态转换为内部状态
+    /// 华为云状态：ACTIVE, PENDING_CREATE, PENDING_UPDATE, PENDING_DELETE,
+    /// PENDING_FREEZE, FREEZE, ILLEGAL, POLICE, PENDING_DISABLE, DISABLE, ERROR
     fn convert_domain_status(status: Option<&str>) -> DomainStatus {
         match status {
             Some("ACTIVE") => DomainStatus::Active,
-            Some("PENDING_CREATE") | Some("PENDING_DELETE") => DomainStatus::Pending,
+            // 各种 PENDING 状态
+            Some("PENDING_CREATE")
+            | Some("PENDING_UPDATE")
+            | Some("PENDING_DELETE")
+            | Some("PENDING_FREEZE")
+            | Some("PENDING_DISABLE") => DomainStatus::Pending,
+            // 冻结/暂停状态
+            Some("FREEZE") | Some("ILLEGAL") | Some("POLICE") | Some("DISABLE") => {
+                DomainStatus::Paused
+            }
             Some("ERROR") => DomainStatus::Error,
-            _ => DomainStatus::Active,
+            _ => DomainStatus::Unknown,
         }
     }
 

@@ -1,12 +1,12 @@
+import { Globe, Menu } from "lucide-react"
 import type { ReactNode } from "react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Globe, Menu } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { cn } from "@/lib/utils"
 import { MainContent } from "./MainContent"
 import { Sidebar } from "./Sidebar"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
 
 interface AppLayoutProps {
   children?: ReactNode

@@ -43,7 +43,9 @@ impl AccountStore {
             .map_err(|e| DnsError::SerializationError(format!("Failed to access store: {e}")))?;
 
         // 从 store 获取账户数据
-        let accounts_value = if let Some(value) = store.get(ACCOUNTS_KEY) { value } else {
+        let accounts_value = if let Some(value) = store.get(ACCOUNTS_KEY) {
+            value
+        } else {
             log::info!("No accounts found in store, returning empty list");
             return Ok(Vec::new());
         };

@@ -1,7 +1,7 @@
-import { getUpdateNotes, useUpdaterStore } from "@/stores/updaterStore"
 import { ArrowRight, Download, RefreshCw } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
+import { getUpdateNotes, useUpdaterStore } from "@/stores/updaterStore"
 import { Button } from "./button"
 import {
   Dialog,

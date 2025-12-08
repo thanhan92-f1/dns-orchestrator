@@ -1,8 +1,8 @@
+import { Globe } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import type { Domain, DomainStatus } from "@/types"
-import { Globe } from "lucide-react"
-import { useTranslation } from "react-i18next"
 
 interface DomainTreeItemProps {
   domain: Domain
@@ -18,6 +18,7 @@ const statusConfig: Record<
   paused: { labelKey: "domain.status.paused", variant: "secondary" },
   pending: { labelKey: "domain.status.pending", variant: "outline" },
   error: { labelKey: "domain.status.error", variant: "destructive" },
+  unknown: { labelKey: "domain.status.unknown", variant: "outline" },
 }
 
 export function DomainTreeItem({ domain, isSelected, onSelect }: DomainTreeItemProps) {

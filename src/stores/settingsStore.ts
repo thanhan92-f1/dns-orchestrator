@@ -1,5 +1,5 @@
-import { type LanguageCode, changeLanguage, supportedLanguages } from "@/i18n"
 import { create } from "zustand"
+import { changeLanguage, type LanguageCode, supportedLanguages } from "@/i18n"
 
 type Theme = "light" | "dark" | "system"
 

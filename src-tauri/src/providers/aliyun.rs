@@ -340,12 +340,13 @@ impl AliyunProvider {
     }
 
     /// 将阿里云域名状态转换为内部状态
+    /// 注意：阿里云 DescribeDomains API 实际上不返回 DomainStatus 字段
     fn convert_domain_status(status: Option<&str>) -> DomainStatus {
         match status {
             Some("ENABLE") | Some("enable") => DomainStatus::Active,
             Some("PAUSE") | Some("pause") => DomainStatus::Paused,
             Some("SPAM") | Some("spam") => DomainStatus::Error,
-            _ => DomainStatus::Active, // 阿里云默认状态
+            _ => DomainStatus::Unknown,
         }
     }
 

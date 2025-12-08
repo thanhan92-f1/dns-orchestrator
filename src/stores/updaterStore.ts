@@ -1,8 +1,7 @@
-import { invoke } from "@tauri-apps/api/core"
+import { Channel, invoke } from "@tauri-apps/api/core"
 import { platform } from "@tauri-apps/plugin-os"
 import { relaunch } from "@tauri-apps/plugin-process"
-import { type Update, check } from "@tauri-apps/plugin-updater"
-import { Channel } from "@tauri-apps/api/core"
+import { check, type Update } from "@tauri-apps/plugin-updater"
 import { create } from "zustand"
 
 const SKIPPED_VERSION_KEY = "dns-orchestrator-skipped-version"

@@ -126,6 +126,7 @@ pub enum DomainStatus {
     Paused,
     Pending,
     Error,
+    Unknown,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

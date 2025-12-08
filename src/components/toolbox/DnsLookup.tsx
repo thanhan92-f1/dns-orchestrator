@@ -1,3 +1,7 @@
+import { Loader2, Search, Server } from "lucide-react"
+import { useState } from "react"
+import { useTranslation } from "react-i18next"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -17,10 +21,6 @@ import {
 } from "@/components/ui/table"
 import type { DnsLookupResult, DnsLookupType } from "@/types"
 import { DNS_RECORD_TYPES } from "@/types"
-import { Loader2, Search, Server } from "lucide-react"
-import { useState } from "react"
-import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
 import { HistoryChips } from "./HistoryChips"
 import { useToolboxQuery } from "./hooks/useToolboxQuery"
 import { CopyableText, ToolCard } from "./shared"

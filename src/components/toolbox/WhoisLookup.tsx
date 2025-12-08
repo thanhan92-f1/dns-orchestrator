@@ -1,9 +1,9 @@
-import { Button } from "@/components/ui/button"
-import type { WhoisResult } from "@/types"
 import { ChevronDown, ChevronUp } from "lucide-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+import type { WhoisResult } from "@/types"
 import { useToolboxQuery } from "./hooks/useToolboxQuery"
 import { QueryInput, ToolCard } from "./shared"
 

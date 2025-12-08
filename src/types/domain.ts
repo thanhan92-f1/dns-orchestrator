@@ -1,5 +1,5 @@
 /** 域名状态 */
-export type DomainStatus = "active" | "paused" | "pending" | "error"
+export type DomainStatus = "active" | "paused" | "pending" | "error" | "unknown"
 
 /** 域名信息 */
 export interface Domain {

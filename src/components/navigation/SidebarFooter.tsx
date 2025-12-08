@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button"
 import { Settings, Wrench } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { Button } from "@/components/ui/button"
 
 interface SidebarFooterProps {
   onOpenToolbox?: () => void

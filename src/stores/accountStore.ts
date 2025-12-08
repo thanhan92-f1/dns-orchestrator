@@ -1,8 +1,8 @@
-import type { Account, ApiResponse, CreateAccountRequest } from "@/types"
-import type { ProviderInfo } from "@/types/provider"
 import { invoke } from "@tauri-apps/api/core"
 import { toast } from "sonner"
 import { create } from "zustand"
+import type { Account, ApiResponse, CreateAccountRequest } from "@/types"
+import type { ProviderInfo } from "@/types/provider"
 
 interface AccountState {
   accounts: Account[]

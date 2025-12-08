@@ -1,9 +1,9 @@
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
-import type { Domain, DomainStatus } from "@/types"
 import { Globe, Loader2 } from "lucide-react"
 import { useCallback, useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
+import type { Domain, DomainStatus } from "@/types"
 
 interface DomainListProps {
   domains: Domain[]
@@ -56,6 +56,7 @@ export function DomainList({
     paused: { labelKey: "domain.status.paused", variant: "secondary" },
     pending: { labelKey: "domain.status.pending", variant: "outline" },
     error: { labelKey: "domain.status.error", variant: "destructive" },
+    unknown: { labelKey: "domain.status.unknown", variant: "outline" },
   }
 
   if (domains.length === 0) {

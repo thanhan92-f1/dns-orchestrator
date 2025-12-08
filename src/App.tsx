@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { AccountsPage } from "@/components/accounts/AccountsPage"
 import { AppLayout } from "@/components/layout/AppLayout"
 import { SettingsPage } from "@/components/settings/SettingsPage"
@@ -9,8 +11,6 @@ import { useIsMobile } from "@/hooks/useMediaQuery"
 import { initDebugMode } from "@/lib/debug"
 import { initTheme, useDomainStore } from "@/stores"
 import { useUpdaterStore } from "@/stores/updaterStore"
-import { useEffect, useState } from "react"
-import { useTranslation } from "react-i18next"
 
 type View = "main" | "settings" | "toolbox" | "accounts"
 

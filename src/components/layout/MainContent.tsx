@@ -1,8 +1,8 @@
-import { DnsRecordTable } from "@/components/dns/DnsRecordTable"
-import { useAccountStore, useDomainStore } from "@/stores"
 import { Globe } from "lucide-react"
 import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
+import { DnsRecordTable } from "@/components/dns/DnsRecordTable"
+import { useAccountStore, useDomainStore } from "@/stores"
 
 export function MainContent() {
   const { t } = useTranslation()

@@ -1,9 +1,9 @@
-import { Badge } from "@/components/ui/badge"
-import type { IpGeoInfo, IpLookupResult } from "@/types"
 import { Globe, MapPin, Server } from "lucide-react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
+import { Badge } from "@/components/ui/badge"
+import type { IpGeoInfo, IpLookupResult } from "@/types"
 import { useToolboxQuery } from "./hooks/useToolboxQuery"
 import { CopyableText, InfoCard, QueryInput, ToolCard } from "./shared"
 

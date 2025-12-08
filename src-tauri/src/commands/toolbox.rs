@@ -505,7 +505,9 @@ async fn lookup_single_ip(ip: &str, client: &reqwest::Client) -> Result<IpGeoInf
 
     if !response.success {
         let error_msg = match response.message.as_deref() {
-            Some("You've hit the monthly limit") => "IP 查询服务已达本月限额，请稍后再试".to_string(),
+            Some("You've hit the monthly limit") => {
+                "IP 查询服务已达本月限额，请稍后再试".to_string()
+            }
             Some("Invalid IP address") => "无效的 IP 地址".to_string(),
             Some("Reserved range") => "该 IP 属于保留地址段，无法查询".to_string(),
             Some(msg) => format!("查询失败: {}", msg),

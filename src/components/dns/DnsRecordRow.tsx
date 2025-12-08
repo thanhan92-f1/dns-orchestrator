@@ -1,3 +1,5 @@
+import { MoreHorizontal, Pencil, Shield, ShieldOff, Trash2 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -9,8 +11,6 @@ import {
 import { TableCell, TableRow } from "@/components/ui/table"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import type { DnsRecord } from "@/types"
-import { MoreHorizontal, Pencil, Shield, ShieldOff, Trash2 } from "lucide-react"
-import { useTranslation } from "react-i18next"
 
 interface DnsRecordRowProps {
   record: DnsRecord

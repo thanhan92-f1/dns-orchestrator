@@ -1,3 +1,10 @@
+import { invoke } from "@tauri-apps/api/core"
+import { open as openFileDialog } from "@tauri-apps/plugin-dialog"
+import { readTextFile } from "@tauri-apps/plugin-fs"
+import { AlertTriangle, FileText, Loader2, Lock, Upload } from "lucide-react"
+import { useCallback, useState } from "react"
+import { useTranslation } from "react-i18next"
+import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -12,14 +19,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { ApiResponse, ImportAccountsRequest, ImportPreview, ImportResult } from "@/types"
-import { invoke } from "@tauri-apps/api/core"
-import { open as openFileDialog } from "@tauri-apps/plugin-dialog"
-import { readTextFile } from "@tauri-apps/plugin-fs"
-import { AlertTriangle, FileText, Loader2, Lock, Upload } from "lucide-react"
-import { useCallback, useState } from "react"
-import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
-import { ProviderIcon, getProviderName } from "./ProviderIcon"
+import { getProviderName, ProviderIcon } from "./ProviderIcon"
 
 interface ImportDialogProps {
   open: boolean

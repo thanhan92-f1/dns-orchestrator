@@ -1,9 +1,9 @@
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import type { QueryHistoryItem } from "@/types"
 import { Loader2, Search } from "lucide-react"
 import type { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import type { QueryHistoryItem } from "@/types"
 import { HistoryChips } from "../HistoryChips"
 
 interface QueryInputProps {

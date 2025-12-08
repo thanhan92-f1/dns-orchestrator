@@ -157,6 +157,7 @@ export default {
       paused: "暂停",
       pending: "待验证",
       error: "异常",
+      unknown: "未知",
     },
     // Toast messages
     fetchFailed: "获取域名列表失败",

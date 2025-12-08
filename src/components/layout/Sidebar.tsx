@@ -1,14 +1,14 @@
-import { AccountTreeItem } from "@/components/navigation"
+import { Globe, Settings, Users, Wrench, X } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { ProviderIcon } from "@/components/account/ProviderIcon"
+import { AccountTreeItem } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import { useAccountStore, useDomainStore } from "@/stores"
-import { Globe, Settings, Users, Wrench, X } from "lucide-react"
-import { useCallback, useEffect, useState } from "react"
-import { useTranslation } from "react-i18next"
 
 interface SidebarProps {
   onOpenToolbox?: () => void

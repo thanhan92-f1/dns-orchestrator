@@ -1,6 +1,6 @@
-import type { QueryHistoryItem } from "@/types"
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
+import type { QueryHistoryItem } from "@/types"
 
 const MAX_HISTORY_ITEMS = 50
 

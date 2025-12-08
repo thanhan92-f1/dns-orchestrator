@@ -161,6 +161,7 @@ export default {
       paused: "Paused",
       pending: "Pending",
       error: "Error",
+      unknown: "Unknown",
     },
     // Toast messages
     fetchFailed: "Failed to fetch domains",
