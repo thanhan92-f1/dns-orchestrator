@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { LIMITS, STORAGE_KEYS } from "@/constants"
-import { useAccountStore } from "@/stores"
+import { useAccountStore, useDomainStore } from "@/stores"
 
 interface HomePageProps {
   onNavigate: (view: "domains" | "toolbox" | "settings" | "accounts") => void
@@ -44,7 +44,14 @@ export function addRecentDomain(domain: Omit<RecentDomain, "timestamp">) {
 export function HomePage({ onNavigate, onQuickAccess }: HomePageProps) {
   const { t } = useTranslation()
   const { accounts } = useAccountStore()
+  const { domainsByAccount } = useDomainStore()
   const [recentDomains, setRecentDomains] = useState<RecentDomain[]>([])
+
+  // 计算总域名数
+  const totalDomains = Object.values(domainsByAccount).reduce(
+    (sum, cache) => sum + (cache?.domains?.length ?? 0),
+    0
+  )
 
   useEffect(() => {
     setRecentDomains(getRecentDomains())
@@ -95,6 +102,15 @@ export function HomePage({ onNavigate, onQuickAccess }: HomePageProps) {
             </CardHeader>
             <CardContent>
               <div className="font-bold text-2xl">{accounts.length}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="font-medium text-sm">{t("home.totalDomains")}</CardTitle>
+              <Globe className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="font-bold text-2xl">{totalDomains}</div>
             </CardContent>
           </Card>
         </div>

@@ -178,6 +178,7 @@ export default {
     welcome: "欢迎使用 DNS Orchestrator",
     welcomeDesc: "管理你的 DNS 记录，一切尽在掌控",
     totalAccounts: "账户总数",
+    totalDomains: "域名总数",
     recentDomains: "最近访问",
     recentDomainsDesc: "快速访问最近操作的域名",
     quickActions: "快捷操作",

@@ -29,7 +29,7 @@ const statusConfig: Record<
 
 export function DomainSelectorPage({ onSelect }: DomainSelectorPageProps) {
   const { t } = useTranslation()
-  const { accounts, isLoading: isAccountsLoading, fetchAccounts } = useAccountStore()
+  const { accounts, isLoading: isAccountsLoading } = useAccountStore()
   const {
     domainsByAccount,
     isBackgroundRefreshing,
@@ -44,11 +44,6 @@ export function DomainSelectorPage({ onSelect }: DomainSelectorPageProps) {
 
   const [searchQuery, setSearchQuery] = useState("")
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set())
-
-  // 初始化加载账户
-  useEffect(() => {
-    fetchAccounts()
-  }, [fetchAccounts])
 
   // 有效账户（排除错误状态）
   const validAccounts = useMemo(

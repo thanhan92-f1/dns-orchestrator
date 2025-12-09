@@ -20,6 +20,8 @@ if (theme === "system") {
 }
 
 // 渲染应用
+// 注意：StrictMode 在开发环境下会让 useEffect 执行两次，用于检测副作用问题
+// 这会导致 toast 等提示出现两次，但生产环境不会有此问题
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <App />

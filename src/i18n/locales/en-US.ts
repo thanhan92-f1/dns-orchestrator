@@ -182,6 +182,7 @@ export default {
     welcome: "Welcome to DNS Orchestrator",
     welcomeDesc: "Manage your DNS records with ease",
     totalAccounts: "Total Accounts",
+    totalDomains: "Total Domains",
     recentDomains: "Recent Domains",
     recentDomainsDesc: "Quickly access recently visited domains",
     quickActions: "Quick Actions",

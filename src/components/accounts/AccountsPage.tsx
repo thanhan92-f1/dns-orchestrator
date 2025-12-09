@@ -10,7 +10,7 @@ import {
   Upload,
   Users,
 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { AccountForm } from "@/components/account/AccountForm"
 import { ExportDialog } from "@/components/account/ExportDialog"
@@ -61,10 +61,6 @@ export function AccountsPage({ onBack }: AccountsPageProps) {
 
   const [showAccountForm, setShowAccountForm] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Account | null>(null)
-
-  useEffect(() => {
-    fetchAccounts()
-  }, [fetchAccounts])
 
   const handleDelete = async () => {
     if (deleteTarget) {
