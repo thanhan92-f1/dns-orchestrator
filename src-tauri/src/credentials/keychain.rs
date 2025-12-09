@@ -69,7 +69,7 @@ impl CredentialStore for KeychainStore {
     }
 
     fn save(&self, account_id: &str, credentials: &HashMap<String, String>) -> Result<()> {
-        log::debug!("Saving credentials for account: {}", account_id);
+        log::debug!("Saving credentials for account: {account_id}");
 
         // 读取现有凭证
         let mut all_credentials = self.read_all_internal()?;
@@ -80,7 +80,7 @@ impl CredentialStore for KeychainStore {
         // 写回 Keychain
         self.write_all_internal(&all_credentials)?;
 
-        log::info!("Credentials saved for account: {}", account_id);
+        log::info!("Credentials saved for account: {account_id}");
         Ok(())
     }
 
@@ -88,12 +88,12 @@ impl CredentialStore for KeychainStore {
         let all_credentials = self.read_all_internal()?;
 
         all_credentials.get(account_id).cloned().ok_or_else(|| {
-            DnsError::CredentialError(format!("No credentials found for account: {}", account_id))
+            DnsError::CredentialError(format!("No credentials found for account: {account_id}"))
         })
     }
 
     fn delete(&self, account_id: &str) -> Result<()> {
-        log::debug!("Deleting credentials for account: {}", account_id);
+        log::debug!("Deleting credentials for account: {account_id}");
 
         // 读取现有凭证
         let mut all_credentials = self.read_all_internal()?;
@@ -104,7 +104,7 @@ impl CredentialStore for KeychainStore {
         // 写回 Keychain
         self.write_all_internal(&all_credentials)?;
 
-        log::info!("Credentials deleted for account: {}", account_id);
+        log::info!("Credentials deleted for account: {account_id}");
         Ok(())
     }
 

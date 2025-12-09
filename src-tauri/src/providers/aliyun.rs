@@ -30,7 +30,7 @@ fn url_encode(s: &str) -> String {
             }
             _ => {
                 for byte in c.to_string().as_bytes() {
-                    result.push_str(&format!("%{:02X}", byte));
+                    result.push_str(&format!("%{byte:02X}"));
                 }
             }
         }
@@ -38,7 +38,7 @@ fn url_encode(s: &str) -> String {
     result
 }
 
-/// 将 serde_json::Value 展平为 key-value 对 (处理嵌套对象)
+/// 将 `serde_json::Value` 展平为 key-value 对 (处理嵌套对象)
 fn flatten_value(prefix: &str, value: &serde_json::Value, result: &mut BTreeMap<String, String>) {
     match value {
         serde_json::Value::Object(map) => {
@@ -46,7 +46,7 @@ fn flatten_value(prefix: &str, value: &serde_json::Value, result: &mut BTreeMap<
                 let new_key = if prefix.is_empty() {
                     k.clone()
                 } else {
-                    format!("{}.{}", prefix, k)
+                    format!("{prefix}.{k}")
                 };
                 flatten_value(&new_key, v, result);
             }
@@ -194,7 +194,7 @@ pub struct AliyunProvider {
 }
 
 /// 阿里云错误码映射
-/// 参考: https://help.aliyun.com/document_detail/29774.html
+/// 参考: <https://help.aliyun.com/document_detail/29774.html>
 impl ProviderErrorMapper for AliyunProvider {
     fn provider_name(&self) -> &'static str {
         "aliyun"
@@ -203,7 +203,7 @@ impl ProviderErrorMapper for AliyunProvider {
     fn map_error(&self, raw: RawApiError, context: ErrorContext) -> ProviderError {
         match raw.code.as_deref() {
             // 认证错误
-            Some("InvalidAccessKeyId.NotFound") | Some("SignatureDoesNotMatch") => {
+            Some("InvalidAccessKeyId.NotFound" | "SignatureDoesNotMatch") => {
                 ProviderError::InvalidCredentials {
                     provider: self.provider_name().to_string(),
                 }
@@ -215,7 +215,7 @@ impl ProviderErrorMapper for AliyunProvider {
                 raw_message: Some(raw.message),
             },
             // 记录不存在
-            Some("DomainRecordNotBelongToUser") | Some("InvalidRecordId.NotFound") => {
+            Some("DomainRecordNotBelongToUser" | "InvalidRecordId.NotFound") => {
                 ProviderError::RecordNotFound {
                     provider: self.provider_name().to_string(),
                     record_id: context.record_id.unwrap_or_default(),
@@ -266,17 +266,11 @@ impl AliyunProvider {
     }
 
     /// 生成 ACS3-HMAC-SHA256 签名
-    /// 参考: https://www.alibabacloud.com/help/zh/sdk/product-overview/v3-request-structure-and-signature
+    /// 参考: <https://www.alibabacloud.com/help/zh/sdk/product-overview/v3-request-structure-and-signature>
     fn sign(&self, action: &str, query_string: &str, timestamp: &str, nonce: &str) -> String {
         // 1. 构造规范化请求头 (使用空 body 的 hash)
         let canonical_headers = format!(
-            "host:{}\nx-acs-action:{}\nx-acs-content-sha256:{}\nx-acs-date:{}\nx-acs-signature-nonce:{}\nx-acs-version:{}\n",
-            ALIYUN_DNS_HOST,
-            action,
-            EMPTY_BODY_SHA256,
-            timestamp,
-            nonce,
-            ALIYUN_DNS_VERSION
+            "host:{ALIYUN_DNS_HOST}\nx-acs-action:{action}\nx-acs-content-sha256:{EMPTY_BODY_SHA256}\nx-acs-date:{timestamp}\nx-acs-signature-nonce:{nonce}\nx-acs-version:{ALIYUN_DNS_VERSION}\n"
         );
 
         let signed_headers =
@@ -284,17 +278,16 @@ impl AliyunProvider {
 
         // 2. 构造规范化请求 (RPC 风格: 参数在 query string 中)
         let canonical_request = format!(
-            "POST\n/\n{}\n{}\n{}\n{}",
-            query_string, canonical_headers, signed_headers, EMPTY_BODY_SHA256
+            "POST\n/\n{query_string}\n{canonical_headers}\n{signed_headers}\n{EMPTY_BODY_SHA256}"
         );
 
-        log::debug!("CanonicalRequest:\n{}", canonical_request);
+        log::debug!("CanonicalRequest:\n{canonical_request}");
 
         // 3. 构造待签名字符串
         let hashed_canonical_request = hex::encode(Sha256::digest(canonical_request.as_bytes()));
-        let string_to_sign = format!("ACS3-HMAC-SHA256\n{}", hashed_canonical_request);
+        let string_to_sign = format!("ACS3-HMAC-SHA256\n{hashed_canonical_request}");
 
-        log::debug!("StringToSign:\n{}", string_to_sign);
+        log::debug!("StringToSign:\n{string_to_sign}");
 
         // 4. 计算签名
         let signature = hex::encode(Self::hmac_sha256(
@@ -332,12 +325,12 @@ impl AliyunProvider {
 
         // 3. 构造 URL (参数在 query string 中)
         let url = if query_string.is_empty() {
-            format!("https://{}/", ALIYUN_DNS_HOST)
+            format!("https://{ALIYUN_DNS_HOST}/")
         } else {
-            format!("https://{}/?{}", ALIYUN_DNS_HOST, query_string)
+            format!("https://{ALIYUN_DNS_HOST}/?{query_string}")
         };
 
-        log::debug!("POST {} Action: {}", url, action);
+        log::debug!("POST {url} Action: {action}");
 
         // 4. 发送请求 (body 为空)
         let response = self
@@ -355,19 +348,19 @@ impl AliyunProvider {
             .map_err(|e| self.network_error(e))?;
 
         let status = response.status();
-        log::debug!("Response Status: {}", status);
+        log::debug!("Response Status: {status}");
 
         let response_text = response
             .text()
             .await
-            .map_err(|e| self.network_error(format!("读取响应失败: {}", e)))?;
+            .map_err(|e| self.network_error(format!("读取响应失败: {e}")))?;
 
-        log::debug!("Response Body: {}", response_text);
+        log::debug!("Response Body: {response_text}");
 
         // 先检查是否有错误响应
         if let Ok(error_response) = serde_json::from_str::<AliyunResponse<()>>(&response_text) {
             if let (Some(code), Some(message)) = (error_response.code, error_response.message) {
-                log::error!("API 错误: {} - {}", code, message);
+                log::error!("API 错误: {code} - {message}");
                 return Err(self.map_error(
                     RawApiError::with_code(&code, &message),
                     ErrorContext::default(),
@@ -377,14 +370,14 @@ impl AliyunProvider {
 
         // 解析成功响应
         serde_json::from_str(&response_text).map_err(|e| {
-            log::error!("JSON 解析失败: {}", e);
-            log::error!("原始响应: {}", response_text);
+            log::error!("JSON 解析失败: {e}");
+            log::error!("原始响应: {response_text}");
             self.parse_error(e).into()
         })
     }
 
     /// 将阿里云域名状态转换为内部状态
-    /// 注意：阿里云 DescribeDomains API 实际上不返回 DomainStatus 字段
+    /// 注意：阿里云 `DescribeDomains` API 实际上不返回 `DomainStatus` 字段
     fn convert_domain_status(status: Option<&str>) -> DomainStatus {
         match status {
             Some("ENABLE" | "enable") => DomainStatus::Active,
@@ -408,7 +401,7 @@ impl AliyunProvider {
             _ => Err(ProviderError::InvalidParameter {
                 provider: "aliyun".to_string(),
                 param: "record_type".to_string(),
-                detail: format!("不支持的记录类型: {}", record_type),
+                detail: format!("不支持的记录类型: {record_type}"),
             }.into()),
         }
     }
@@ -461,7 +454,7 @@ impl DnsProvider for AliyunProvider {
             Ok(_) => Ok(true),
             Err(DnsError::Provider(ProviderError::InvalidCredentials { .. })) => Ok(false),
             Err(e) => {
-                log::warn!("凭证验证失败: {}", e);
+                log::warn!("凭证验证失败: {e}");
                 Ok(false)
             }
         }

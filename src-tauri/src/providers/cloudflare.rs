@@ -72,7 +72,7 @@ pub struct CloudflareProvider {
 }
 
 /// Cloudflare 错误码映射
-/// 参考: https://api.cloudflare.com/#getting-started-responses
+/// 参考: <https://api.cloudflare.com/#getting-started-responses>
 impl ProviderErrorMapper for CloudflareProvider {
     fn provider_name(&self) -> &'static str {
         "cloudflare"
@@ -82,7 +82,7 @@ impl ProviderErrorMapper for CloudflareProvider {
         // Cloudflare 错误码映射
         match raw.code.as_deref() {
             // 认证错误
-            Some("9109") | Some("10000") => ProviderError::InvalidCredentials {
+            Some("9109" | "10000") => ProviderError::InvalidCredentials {
                 provider: self.provider_name().to_string(),
             },
             // 记录已存在
@@ -133,8 +133,8 @@ impl CloudflareProvider {
 
     /// 执行 GET 请求
     async fn get<T: for<'de> Deserialize<'de>>(&self, path: &str) -> Result<T> {
-        let url = format!("{}{}", CF_API_BASE, path);
-        log::debug!("GET {}", url);
+        let url = format!("{CF_API_BASE}{path}");
+        log::debug!("GET {url}");
 
         let response = self
             .client
@@ -145,19 +145,19 @@ impl CloudflareProvider {
             .map_err(|e| self.network_error(e))?;
 
         let status = response.status();
-        log::debug!("Response Status: {}", status);
+        log::debug!("Response Status: {status}");
 
         let response_text = response
             .text()
             .await
-            .map_err(|e| self.network_error(format!("读取响应失败: {}", e)))?;
+            .map_err(|e| self.network_error(format!("读取响应失败: {e}")))?;
 
-        log::debug!("Response Body: {}", response_text);
+        log::debug!("Response Body: {response_text}");
 
         let cf_response: CloudflareResponse<T> =
             serde_json::from_str(&response_text).map_err(|e| {
-                log::error!("JSON 解析失败: {}", e);
-                log::error!("原始响应: {}", response_text);
+                log::error!("JSON 解析失败: {e}");
+                log::error!("原始响应: {response_text}");
                 self.parse_error(e)
             })?;
 
@@ -166,7 +166,7 @@ impl CloudflareProvider {
                 .errors
                 .and_then(|errors| errors.first().map(|e| (e.code.to_string(), e.message.clone())))
                 .unwrap_or_else(|| (String::new(), "Unknown error".to_string()));
-            log::error!("API 错误: {}", message);
+            log::error!("API 错误: {message}");
             return Err(self.map_error(
                 RawApiError::with_code(code, message),
                 ErrorContext::default(),
@@ -192,7 +192,7 @@ impl CloudflareProvider {
             params.page,
             params.page_size.min(50)
         );
-        log::debug!("GET {}", url);
+        log::debug!("GET {url}");
 
         let response = self
             .client
@@ -203,19 +203,19 @@ impl CloudflareProvider {
             .map_err(|e| self.network_error(e))?;
 
         let status = response.status();
-        log::debug!("Response Status: {}", status);
+        log::debug!("Response Status: {status}");
 
         let response_text = response
             .text()
             .await
-            .map_err(|e| self.network_error(format!("读取响应失败: {}", e)))?;
+            .map_err(|e| self.network_error(format!("读取响应失败: {e}")))?;
 
-        log::debug!("Response Body: {}", response_text);
+        log::debug!("Response Body: {response_text}");
 
         let cf_response: CloudflareResponse<Vec<T>> = serde_json::from_str(&response_text)
             .map_err(|e| {
-                log::error!("JSON 解析失败: {}", e);
-                log::error!("原始响应: {}", response_text);
+                log::error!("JSON 解析失败: {e}");
+                log::error!("原始响应: {response_text}");
                 self.parse_error(e)
             })?;
 
@@ -224,14 +224,14 @@ impl CloudflareProvider {
                 .errors
                 .and_then(|errors| errors.first().map(|e| (e.code.to_string(), e.message.clone())))
                 .unwrap_or_else(|| (String::new(), "Unknown error".to_string()));
-            log::error!("API 错误: {}", message);
+            log::error!("API 错误: {message}");
             return Err(self.map_error(
                 RawApiError::with_code(code, message),
                 ErrorContext::default(),
             ).into());
         }
 
-        let total_count = cf_response.result_info.map(|i| i.total_count).unwrap_or(0);
+        let total_count = cf_response.result_info.map_or(0, |i| i.total_count);
         let items = cf_response.result.unwrap_or_default();
 
         Ok((items, total_count))
@@ -243,11 +243,11 @@ impl CloudflareProvider {
         path: &str,
         body: &B,
     ) -> Result<T> {
-        let url = format!("{}{}", CF_API_BASE, path);
+        let url = format!("{CF_API_BASE}{path}");
         let body_json =
             serde_json::to_string_pretty(body).unwrap_or_else(|_| "无法序列化请求体".to_string());
-        log::debug!("POST {}", url);
-        log::debug!("Request Body: {}", body_json);
+        log::debug!("POST {url}");
+        log::debug!("Request Body: {body_json}");
 
         let response = self
             .client
@@ -259,19 +259,19 @@ impl CloudflareProvider {
             .map_err(|e| self.network_error(e))?;
 
         let status = response.status();
-        log::debug!("Response Status: {}", status);
+        log::debug!("Response Status: {status}");
 
         let response_text = response
             .text()
             .await
-            .map_err(|e| self.network_error(format!("读取响应失败: {}", e)))?;
+            .map_err(|e| self.network_error(format!("读取响应失败: {e}")))?;
 
-        log::debug!("Response Body: {}", response_text);
+        log::debug!("Response Body: {response_text}");
 
         let cf_response: CloudflareResponse<T> =
             serde_json::from_str(&response_text).map_err(|e| {
-                log::error!("JSON 解析失败: {}", e);
-                log::error!("原始响应: {}", response_text);
+                log::error!("JSON 解析失败: {e}");
+                log::error!("原始响应: {response_text}");
                 self.parse_error(e)
             })?;
 
@@ -280,7 +280,7 @@ impl CloudflareProvider {
                 .errors
                 .and_then(|errors| errors.first().map(|e| (e.code.to_string(), e.message.clone())))
                 .unwrap_or_else(|| (String::new(), "Unknown error".to_string()));
-            log::error!("API 错误: {}", message);
+            log::error!("API 错误: {message}");
             return Err(self.map_error(
                 RawApiError::with_code(code, message),
                 ErrorContext::default(),
@@ -298,11 +298,11 @@ impl CloudflareProvider {
         path: &str,
         body: &B,
     ) -> Result<T> {
-        let url = format!("{}{}", CF_API_BASE, path);
+        let url = format!("{CF_API_BASE}{path}");
         let body_json =
             serde_json::to_string_pretty(body).unwrap_or_else(|_| "无法序列化请求体".to_string());
-        log::debug!("PATCH {}", url);
-        log::debug!("Request Body: {}", body_json);
+        log::debug!("PATCH {url}");
+        log::debug!("Request Body: {body_json}");
 
         let response = self
             .client
@@ -314,19 +314,19 @@ impl CloudflareProvider {
             .map_err(|e| self.network_error(e))?;
 
         let status = response.status();
-        log::debug!("Response Status: {}", status);
+        log::debug!("Response Status: {status}");
 
         let response_text = response
             .text()
             .await
-            .map_err(|e| self.network_error(format!("读取响应失败: {}", e)))?;
+            .map_err(|e| self.network_error(format!("读取响应失败: {e}")))?;
 
-        log::debug!("Response Body: {}", response_text);
+        log::debug!("Response Body: {response_text}");
 
         let cf_response: CloudflareResponse<T> =
             serde_json::from_str(&response_text).map_err(|e| {
-                log::error!("JSON 解析失败: {}", e);
-                log::error!("原始响应: {}", response_text);
+                log::error!("JSON 解析失败: {e}");
+                log::error!("原始响应: {response_text}");
                 self.parse_error(e)
             })?;
 
@@ -335,7 +335,7 @@ impl CloudflareProvider {
                 .errors
                 .and_then(|errors| errors.first().map(|e| (e.code.to_string(), e.message.clone())))
                 .unwrap_or_else(|| (String::new(), "Unknown error".to_string()));
-            log::error!("API 错误: {}", message);
+            log::error!("API 错误: {message}");
             return Err(self.map_error(
                 RawApiError::with_code(code, message),
                 ErrorContext::default(),
@@ -349,8 +349,8 @@ impl CloudflareProvider {
 
     /// 执行 DELETE 请求
     async fn delete(&self, path: &str) -> Result<()> {
-        let url = format!("{}{}", CF_API_BASE, path);
-        log::debug!("DELETE {}", url);
+        let url = format!("{CF_API_BASE}{path}");
+        log::debug!("DELETE {url}");
 
         let response = self
             .client
@@ -361,19 +361,19 @@ impl CloudflareProvider {
             .map_err(|e| self.network_error(e))?;
 
         let status = response.status();
-        log::debug!("Response Status: {}", status);
+        log::debug!("Response Status: {status}");
 
         let response_text = response
             .text()
             .await
-            .map_err(|e| self.network_error(format!("读取响应失败: {}", e)))?;
+            .map_err(|e| self.network_error(format!("读取响应失败: {e}")))?;
 
-        log::debug!("Response Body: {}", response_text);
+        log::debug!("Response Body: {response_text}");
 
         let cf_response: CloudflareResponse<serde_json::Value> =
             serde_json::from_str(&response_text).map_err(|e| {
-                log::error!("JSON 解析失败: {}", e);
-                log::error!("原始响应: {}", response_text);
+                log::error!("JSON 解析失败: {e}");
+                log::error!("原始响应: {response_text}");
                 self.parse_error(e)
             })?;
 
@@ -382,7 +382,7 @@ impl CloudflareProvider {
                 .errors
                 .and_then(|errors| errors.first().map(|e| (e.code.to_string(), e.message.clone())))
                 .unwrap_or_else(|| (String::new(), "Unknown error".to_string()));
-            log::error!("API 错误: {}", message);
+            log::error!("API 错误: {message}");
             return Err(self.map_error(
                 RawApiError::with_code(code, message),
                 ErrorContext::default(),
@@ -418,7 +418,7 @@ impl CloudflareProvider {
     fn full_name_to_relative(&self, full_name: &str, zone_name: &str) -> String {
         if full_name == zone_name {
             "@".to_string()
-        } else if let Some(subdomain) = full_name.strip_suffix(&format!(".{}", zone_name)) {
+        } else if let Some(subdomain) = full_name.strip_suffix(&format!(".{zone_name}")) {
             subdomain.to_string()
         } else {
             full_name.to_string()
@@ -432,11 +432,11 @@ impl CloudflareProvider {
         if relative_name == "@" || relative_name.is_empty() {
             zone_name.to_string()
         } else {
-            format!("{}.{}", relative_name, zone_name)
+            format!("{relative_name}.{zone_name}")
         }
     }
 
-    /// 将 Cloudflare 记录转换为 DnsRecord
+    /// 将 Cloudflare 记录转换为 `DnsRecord`
     fn cf_record_to_dns_record(
         &self,
         cf_record: CloudflareDnsRecord,
@@ -507,7 +507,7 @@ impl DnsProvider for CloudflareProvider {
     }
 
     async fn get_domain(&self, domain_id: &str) -> Result<Domain> {
-        let zone: CloudflareZone = self.get(&format!("/zones/{}", domain_id)).await?;
+        let zone: CloudflareZone = self.get(&format!("/zones/{domain_id}")).await?;
         Ok(self.zone_to_domain(zone))
     }
 
@@ -517,7 +517,7 @@ impl DnsProvider for CloudflareProvider {
         params: &RecordQueryParams,
     ) -> Result<PaginatedResponse<DnsRecord>> {
         // 先获取 zone 信息以获取域名
-        let zone: CloudflareZone = self.get(&format!("/zones/{}", domain_id)).await?;
+        let zone: CloudflareZone = self.get(&format!("/zones/{domain_id}")).await?;
         let zone_name = zone.name;
 
         // 构建查询 URL，包含搜索参数
@@ -542,11 +542,11 @@ impl DnsProvider for CloudflareProvider {
             }
         }
 
-        log::debug!("GET {}{}", CF_API_BASE, url);
+        log::debug!("GET {CF_API_BASE}{url}");
 
         let response = self
             .client
-            .get(format!("{}{}", CF_API_BASE, url))
+            .get(format!("{CF_API_BASE}{url}"))
             .header("Authorization", format!("Bearer {}", self.api_token))
             .send()
             .await
@@ -555,7 +555,7 @@ impl DnsProvider for CloudflareProvider {
         let response_text = response
             .text()
             .await
-            .map_err(|e| self.network_error(format!("读取响应失败: {}", e)))?;
+            .map_err(|e| self.network_error(format!("读取响应失败: {e}")))?;
 
         let cf_response: CloudflareResponse<Vec<CloudflareDnsRecord>> =
             serde_json::from_str(&response_text)
@@ -572,7 +572,7 @@ impl DnsProvider for CloudflareProvider {
             ).into());
         }
 
-        let total_count = cf_response.result_info.map(|i| i.total_count).unwrap_or(0);
+        let total_count = cf_response.result_info.map_or(0, |i| i.total_count);
         let cf_records = cf_response.result.unwrap_or_default();
 
         let records: Result<Vec<DnsRecord>> = cf_records
@@ -668,7 +668,7 @@ impl DnsProvider for CloudflareProvider {
     }
 
     async fn delete_record(&self, record_id: &str, domain_id: &str) -> Result<()> {
-        self.delete(&format!("/zones/{}/dns_records/{}", domain_id, record_id))
+        self.delete(&format!("/zones/{domain_id}/dns_records/{record_id}"))
             .await
     }
 }

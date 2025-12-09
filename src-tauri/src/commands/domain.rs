@@ -1,7 +1,7 @@
 use tauri::State;
 
 use crate::error::{DnsError, ProviderError};
-use crate::types::*;
+use crate::types::{AccountStatus, ApiResponse, PaginatedResponse, Domain, PaginationParams};
 use crate::AppState;
 
 /// 更新账户状态（凭证失效时调用）
@@ -10,7 +10,7 @@ async fn mark_account_invalid(state: &AppState, account_id: &str, error_msg: &st
     if let Some(account) = accounts.iter_mut().find(|a| a.id == account_id) {
         account.status = Some(AccountStatus::Error);
         account.error = Some(error_msg.to_string());
-        log::warn!("Account {} marked as invalid: {}", account_id, error_msg);
+        log::warn!("Account {account_id} marked as invalid: {error_msg}");
     }
 }
 

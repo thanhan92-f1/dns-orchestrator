@@ -20,15 +20,15 @@ const WHOIS_SERVERS: &str = include_str!("../resources/whois_servers.json");
 #[tauri::command]
 pub async fn whois_lookup(domain: String) -> Result<ApiResponse<WhoisResult>, String> {
     let whois =
-        WhoIs::from_string(WHOIS_SERVERS).map_err(|e| format!("初始化 WHOIS 客户端失败: {}", e))?;
+        WhoIs::from_string(WHOIS_SERVERS).map_err(|e| format!("初始化 WHOIS 客户端失败: {e}"))?;
 
     let options =
-        WhoIsLookupOptions::from_string(&domain).map_err(|e| format!("无效的域名: {}", e))?;
+        WhoIsLookupOptions::from_string(&domain).map_err(|e| format!("无效的域名: {e}"))?;
 
     let raw = whois
         .lookup_async(options)
         .await
-        .map_err(|e| format!("WHOIS 查询失败: {}", e))?;
+        .map_err(|e| format!("WHOIS 查询失败: {e}"))?;
 
     // 解析原始 WHOIS 数据
     let result = parse_whois_response(&domain, &raw);
@@ -190,7 +190,7 @@ pub async fn dns_lookup(
             // 解析自定义 nameserver 地址
             let ns_ip: IpAddr = ns
                 .parse()
-                .map_err(|_| format!("无效的 DNS 服务器地址: {}", ns))?;
+                .map_err(|_| format!("无效的 DNS 服务器地址: {ns}"))?;
 
             let config = ResolverConfig::from_parts(
                 None,
@@ -228,8 +228,7 @@ pub async fn dns_lookup(
                             .as_lookup()
                             .record_iter()
                             .next()
-                            .map(|r| r.ttl())
-                            .unwrap_or(0),
+                            .map_or(0, |r| r.ttl()),
                         priority: None,
                     });
                 }
@@ -246,8 +245,7 @@ pub async fn dns_lookup(
                             .as_lookup()
                             .record_iter()
                             .next()
-                            .map(|r| r.ttl())
-                            .unwrap_or(0),
+                            .map_or(0, |r| r.ttl()),
                         priority: None,
                     });
                 }
@@ -264,8 +262,7 @@ pub async fn dns_lookup(
                             .as_lookup()
                             .record_iter()
                             .next()
-                            .map(|r| r.ttl())
-                            .unwrap_or(0),
+                            .map_or(0, |r| r.ttl()),
                         priority: Some(mx.preference()),
                     });
                 }
@@ -277,8 +274,7 @@ pub async fn dns_lookup(
                     let txt_data: String = txt
                         .iter()
                         .map(|data| String::from_utf8_lossy(data).to_string())
-                        .collect::<Vec<_>>()
-                        .join("");
+                        .collect::<String>();
                     records.push(DnsLookupRecord {
                         record_type: "TXT".to_string(),
                         name: domain.clone(),
@@ -287,8 +283,7 @@ pub async fn dns_lookup(
                             .as_lookup()
                             .record_iter()
                             .next()
-                            .map(|r| r.ttl())
-                            .unwrap_or(0),
+                            .map_or(0, |r| r.ttl()),
                         priority: None,
                     });
                 }
@@ -305,8 +300,7 @@ pub async fn dns_lookup(
                             .as_lookup()
                             .record_iter()
                             .next()
-                            .map(|r| r.ttl())
-                            .unwrap_or(0),
+                            .map_or(0, |r| r.ttl()),
                         priority: None,
                     });
                 }
@@ -351,8 +345,7 @@ pub async fn dns_lookup(
                             .as_lookup()
                             .record_iter()
                             .next()
-                            .map(|r| r.ttl())
-                            .unwrap_or(0),
+                            .map_or(0, |r| r.ttl()),
                         priority: None,
                     });
                 }
@@ -375,8 +368,7 @@ pub async fn dns_lookup(
                             .as_lookup()
                             .record_iter()
                             .next()
-                            .map(|r| r.ttl())
-                            .unwrap_or(0),
+                            .map_or(0, |r| r.ttl()),
                         priority: Some(srv.priority()),
                     });
                 }
@@ -447,7 +439,7 @@ pub async fn dns_lookup(
             }
         }
         _ => {
-            return Err(format!("不支持的记录类型: {}", record_type));
+            return Err(format!("不支持的记录类型: {record_type}"));
         }
     }
 
@@ -490,18 +482,17 @@ struct IpWhoisConnection {
 /// 查询单个 IP 的地理位置
 async fn lookup_single_ip(ip: &str, client: &reqwest::Client) -> Result<IpGeoInfo, String> {
     let url = format!(
-        "https://ipwho.is/{}?fields=ip,success,message,type,country,country_code,region,city,latitude,longitude,timezone,connection",
-        ip
+        "https://ipwho.is/{ip}?fields=ip,success,message,type,country,country_code,region,city,latitude,longitude,timezone,connection"
     );
 
     let response: IpWhoisResponse = client
         .get(&url)
         .send()
         .await
-        .map_err(|e| format!("请求失败: {}", e))?
+        .map_err(|e| format!("请求失败: {e}"))?
         .json()
         .await
-        .map_err(|e| format!("解析失败: {}", e))?;
+        .map_err(|e| format!("解析失败: {e}"))?;
 
     if !response.success {
         let error_msg = match response.message.as_deref() {
@@ -510,7 +501,7 @@ async fn lookup_single_ip(ip: &str, client: &reqwest::Client) -> Result<IpGeoInf
             }
             Some("Invalid IP address") => "无效的 IP 地址".to_string(),
             Some("Reserved range") => "该 IP 属于保留地址段，无法查询".to_string(),
-            Some(msg) => format!("查询失败: {}", msg),
+            Some(msg) => format!("查询失败: {msg}"),
             None => "查询失败".to_string(),
         };
         return Err(error_msg);
@@ -529,7 +520,7 @@ async fn lookup_single_ip(ip: &str, client: &reqwest::Client) -> Result<IpGeoInf
         (
             conn.isp,
             conn.org.clone(),
-            conn.asn.map(|n| format!("AS{}", n)),
+            conn.asn.map(|n| format!("AS{n}")),
         )
     });
 
@@ -597,7 +588,7 @@ pub async fn ip_lookup(query: String) -> Result<ApiResponse<IpLookupResult>, Str
     }
 
     if ips.is_empty() {
-        return Err(format!("无法解析域名: {}", query));
+        return Err(format!("无法解析域名: {query}"));
     }
 
     // 查询每个 IP 的地理位置（并行）
@@ -607,7 +598,7 @@ pub async fn ip_lookup(query: String) -> Result<ApiResponse<IpLookupResult>, Str
             Ok(info) => results.push(info),
             Err(e) => {
                 // 记录错误但继续处理其他 IP
-                eprintln!("查询 IP {} 失败: {}", ip, e);
+                eprintln!("查询 IP {ip} 失败: {e}");
             }
         }
     }
@@ -628,7 +619,7 @@ fn check_http_connection(domain: &str, port: u16) -> bool {
     use std::io::{Read, Write};
     use std::net::TcpStream;
 
-    if let Ok(mut stream) = TcpStream::connect(format!("{}:{}", domain, port)) {
+    if let Ok(mut stream) = TcpStream::connect(format!("{domain}:{port}")) {
         stream
             .set_read_timeout(Some(std::time::Duration::from_secs(5)))
             .ok();
@@ -637,8 +628,7 @@ fn check_http_connection(domain: &str, port: u16) -> bool {
             .ok();
 
         let request = format!(
-            "HEAD / HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n",
-            domain
+            "HEAD / HTTP/1.1\r\nHost: {domain}\r\nConnection: close\r\n\r\n"
         );
 
         if stream.write_all(request.as_bytes()).is_ok() {
@@ -671,7 +661,7 @@ pub async fn ssl_check(
 
     tokio::task::spawn_blocking(move || {
         // 尝试建立 TCP 连接
-        let stream = match TcpStream::connect(format!("{}:{}", domain_clone, port)) {
+        let stream = match TcpStream::connect(format!("{domain_clone}:{port}")) {
             Ok(s) => s,
             Err(e) => {
                 // 连接失败
@@ -680,7 +670,7 @@ pub async fn ssl_check(
                     port,
                     connection_status: "failed".to_string(),
                     cert_info: None,
-                    error: Some(format!("连接失败: {}", e)),
+                    error: Some(format!("连接失败: {e}")),
                 }));
             }
         };
@@ -700,38 +690,34 @@ pub async fn ssl_check(
                     port,
                     connection_status: "failed".to_string(),
                     cert_info: None,
-                    error: Some(format!("TLS 初始化失败: {}", e)),
+                    error: Some(format!("TLS 初始化失败: {e}")),
                 }));
             }
         };
 
-        let mut tls_stream = match connector.connect(&domain_clone, stream) {
-            Ok(s) => s,
-            Err(_) => {
-                // TLS 握手失败，检测是否是 HTTP 连接
-                if check_http_connection(&domain_clone, port) {
-                    return Ok(ApiResponse::success(SslCheckResult {
-                        domain: domain_clone,
-                        port,
-                        connection_status: "http".to_string(),
-                        cert_info: None,
-                        error: None,
-                    }));
-                }
+        let mut tls_stream = if let Ok(s) = connector.connect(&domain_clone, stream) { s } else {
+            // TLS 握手失败，检测是否是 HTTP 连接
+            if check_http_connection(&domain_clone, port) {
                 return Ok(ApiResponse::success(SslCheckResult {
                     domain: domain_clone,
                     port,
-                    connection_status: "failed".to_string(),
+                    connection_status: "http".to_string(),
                     cert_info: None,
-                    error: Some("TLS 握手失败，且非 HTTP 连接".to_string()),
+                    error: None,
                 }));
             }
+            return Ok(ApiResponse::success(SslCheckResult {
+                domain: domain_clone,
+                port,
+                connection_status: "failed".to_string(),
+                cert_info: None,
+                error: Some("TLS 握手失败，且非 HTTP 连接".to_string()),
+            }));
         };
 
         // 发送 HTTP 请求
         let request = format!(
-            "HEAD / HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n",
-            domain_clone
+            "HEAD / HTTP/1.1\r\nHost: {domain_clone}\r\nConnection: close\r\n\r\n"
         );
         tls_stream.write_all(request.as_bytes()).ok();
         let mut response = vec![0u8; 1024];
@@ -759,7 +745,7 @@ pub async fn ssl_check(
                     port,
                     connection_status: "https".to_string(),
                     cert_info: None,
-                    error: Some(format!("证书编码失败: {}", e)),
+                    error: Some(format!("证书编码失败: {e}")),
                 }));
             }
         };
@@ -773,7 +759,7 @@ pub async fn ssl_check(
                     port,
                     connection_status: "https".to_string(),
                     cert_info: None,
-                    error: Some(format!("证书解析失败: {}", e)),
+                    error: Some(format!("证书解析失败: {e}")),
                 }));
             }
         };
@@ -795,7 +781,7 @@ pub async fn ssl_check(
         // 验证证书是否有效
         let is_valid = TlsConnector::new()
             .map(|c| {
-                TcpStream::connect(format!("{}:{}", domain_clone, port))
+                TcpStream::connect(format!("{domain_clone}:{port}"))
                     .ok()
                     .and_then(|s| c.connect(&domain_clone, s).ok())
                     .is_some()
@@ -852,7 +838,7 @@ pub async fn ssl_check(
         }))
     })
     .await
-    .map_err(|e| format!("任务执行失败: {}", e))?
+    .map_err(|e| format!("任务执行失败: {e}"))?
 }
 
 /// SSL 证书检查（Android 使用 rustls）

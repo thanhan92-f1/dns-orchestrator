@@ -60,47 +60,47 @@ impl std::fmt::Display for ProviderError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::NetworkError { provider, detail } => {
-                write!(f, "[{}] Network error: {}", provider, detail)
+                write!(f, "[{provider}] Network error: {detail}")
             }
             Self::InvalidCredentials { provider } => {
-                write!(f, "[{}] Invalid credentials", provider)
+                write!(f, "[{provider}] Invalid credentials")
             }
             Self::RecordExists {
                 provider,
                 record_name,
                 ..
             } => {
-                write!(f, "[{}] Record '{}' already exists", provider, record_name)
+                write!(f, "[{provider}] Record '{record_name}' already exists")
             }
             Self::RecordNotFound {
                 provider,
                 record_id,
                 ..
             } => {
-                write!(f, "[{}] Record '{}' not found", provider, record_id)
+                write!(f, "[{provider}] Record '{record_id}' not found")
             }
             Self::InvalidParameter {
                 provider,
                 param,
                 detail,
             } => {
-                write!(f, "[{}] Invalid parameter '{}': {}", provider, param, detail)
+                write!(f, "[{provider}] Invalid parameter '{param}': {detail}")
             }
             Self::QuotaExceeded { provider, .. } => {
-                write!(f, "[{}] Quota exceeded", provider)
+                write!(f, "[{provider}] Quota exceeded")
             }
             Self::DomainNotFound { provider, domain } => {
-                write!(f, "[{}] Domain '{}' not found", provider, domain)
+                write!(f, "[{provider}] Domain '{domain}' not found")
             }
             Self::ParseError { provider, detail } => {
-                write!(f, "[{}] Parse error: {}", provider, detail)
+                write!(f, "[{provider}] Parse error: {detail}")
             }
             Self::Unknown {
                 provider,
                 raw_message,
                 ..
             } => {
-                write!(f, "[{}] {}", provider, raw_message)
+                write!(f, "[{provider}] {raw_message}")
             }
         }
     }

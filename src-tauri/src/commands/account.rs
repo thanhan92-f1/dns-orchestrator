@@ -4,7 +4,7 @@ use crate::crypto;
 use crate::error::DnsError;
 use crate::providers::create_provider;
 use crate::storage::AccountStore;
-use crate::types::*;
+use crate::types::{ApiResponse, Account, CreateAccountRequest, DnsProvider, ProviderMetadata, ExportAccountsResponse, ExportAccountsRequest, ExportedAccount, ExportFile, ExportFileHeader, ImportPreview, ImportPreviewAccount, ImportResult, ImportAccountsRequest, ImportFailure, AccountStatus};
 use crate::AppState;
 
 /// 列出所有账号
@@ -48,12 +48,12 @@ pub async fn create_account(
     let now = chrono::Utc::now().to_rfc3339();
 
     // 4. 保存凭证到 Keychain
-    log::info!("Saving credentials to Keychain for account: {}", account_id);
+    log::info!("Saving credentials to Keychain for account: {account_id}");
     state
         .credential_store
         .save(&account_id, &request.credentials)
         .map_err(|e| {
-            log::error!("Failed to save credentials to Keychain: {}", e);
+            log::error!("Failed to save credentials to Keychain: {e}");
             DnsError::CredentialError(e.to_string())
         })?;
     log::info!("Credentials saved successfully to Keychain");
@@ -78,7 +78,7 @@ pub async fn create_account(
     // 8. 持久化账户元数据到 Store
     let accounts = state.accounts.read().await.clone();
     if let Err(e) = AccountStore::save_accounts(&state.app_handle, &accounts) {
-        log::error!("Failed to persist account to store: {}", e);
+        log::error!("Failed to persist account to store: {e}");
         // 不回滚，只记录错误（账户已在内存和 Keychain 中）
     }
 
@@ -115,7 +115,7 @@ pub async fn delete_account(
     drop(accounts); // 释放锁
 
     if let Err(e) = AccountStore::delete_account(&state.app_handle, &account_id, &accounts_clone) {
-        log::error!("Failed to delete account from store: {}", e);
+        log::error!("Failed to delete account from store: {e}");
         // 不影响删除操作的成功
     }
 
@@ -236,7 +236,7 @@ pub async fn preview_import(
 ) -> Result<ApiResponse<ImportPreview>, DnsError> {
     // 1. 解析文件
     let export_file: ExportFile = serde_json::from_str(&content)
-        .map_err(|e| DnsError::ImportExportError(format!("无效的导入文件: {}", e)))?;
+        .map_err(|e| DnsError::ImportExportError(format!("无效的导入文件: {e}")))?;
 
     // 2. 检查版本
     if export_file.header.version > 1 {
@@ -277,10 +277,10 @@ pub async fn preview_import(
             .map_err(|_| DnsError::ImportExportError("解密失败，请检查密码是否正确".to_string()))?;
 
         serde_json::from_slice(&plaintext)
-            .map_err(|e| DnsError::ImportExportError(format!("解析账号数据失败: {}", e)))?
+            .map_err(|e| DnsError::ImportExportError(format!("解析账号数据失败: {e}")))?
     } else {
         serde_json::from_value(export_file.data)
-            .map_err(|e| DnsError::ImportExportError(format!("解析账号数据失败: {}", e)))?
+            .map_err(|e| DnsError::ImportExportError(format!("解析账号数据失败: {e}")))?
     };
 
     // 5. 检查与现有账号的冲突
@@ -312,7 +312,7 @@ pub async fn import_accounts(
 ) -> Result<ApiResponse<ImportResult>, DnsError> {
     // 1. 解析和解密（逻辑与 preview_import 类似）
     let export_file: ExportFile = serde_json::from_str(&request.content)
-        .map_err(|e| DnsError::ImportExportError(format!("无效的导入文件: {}", e)))?;
+        .map_err(|e| DnsError::ImportExportError(format!("无效的导入文件: {e}")))?;
 
     let accounts: Vec<ExportedAccount> = if export_file.header.encrypted {
         let password = request
@@ -338,10 +338,10 @@ pub async fn import_accounts(
             .map_err(|_| DnsError::ImportExportError("解密失败，请检查密码是否正确".to_string()))?;
 
         serde_json::from_slice(&plaintext)
-            .map_err(|e| DnsError::ImportExportError(format!("解析账号数据失败: {}", e)))?
+            .map_err(|e| DnsError::ImportExportError(format!("解析账号数据失败: {e}")))?
     } else {
         serde_json::from_value(export_file.data)
-            .map_err(|e| DnsError::ImportExportError(format!("解析账号数据失败: {}", e)))?
+            .map_err(|e| DnsError::ImportExportError(format!("解析账号数据失败: {e}")))?
     };
 
     // 2. 逐个导入账号
@@ -363,7 +363,7 @@ pub async fn import_accounts(
             Err(e) => {
                 failures.push(ImportFailure {
                     name: exported.name.clone(),
-                    reason: format!("创建 Provider 失败: {}", e),
+                    reason: format!("创建 Provider 失败: {e}"),
                 });
                 continue;
             }
@@ -379,7 +379,7 @@ pub async fn import_accounts(
         {
             failures.push(ImportFailure {
                 name: exported.name.clone(),
-                reason: format!("保存凭证失败: {}", e),
+                reason: format!("保存凭证失败: {e}"),
             });
             continue;
         }
@@ -406,7 +406,7 @@ pub async fn import_accounts(
     // 3. 持久化账户元数据
     let accounts = state.accounts.read().await.clone();
     if let Err(e) = AccountStore::save_accounts(&state.app_handle, &accounts) {
-        log::error!("Failed to persist accounts after import: {}", e);
+        log::error!("Failed to persist accounts after import: {e}");
     }
 
     Ok(ApiResponse::success(ImportResult {

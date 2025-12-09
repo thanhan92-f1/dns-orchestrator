@@ -21,7 +21,7 @@ fn derive_key(password: &str, salt: &[u8]) -> [u8; KEY_LENGTH] {
 
 /// 加密数据
 ///
-/// 返回: (salt_base64, nonce_base64, ciphertext_base64)
+/// 返回: (`salt_base64`, `nonce_base64`, `ciphertext_base64`)
 pub fn encrypt(plaintext: &[u8], password: &str) -> Result<(String, String, String)> {
     // 生成随机盐和 nonce
     let mut salt = [0u8; SALT_LENGTH];
@@ -34,13 +34,13 @@ pub fn encrypt(plaintext: &[u8], password: &str) -> Result<(String, String, Stri
 
     // 创建加密器
     let cipher = Aes256Gcm::new_from_slice(&key)
-        .map_err(|e| DnsError::SerializationError(format!("Failed to create cipher: {}", e)))?;
+        .map_err(|e| DnsError::SerializationError(format!("Failed to create cipher: {e}")))?;
     let nonce = Nonce::from_slice(&nonce_bytes);
 
     // 加密
     let ciphertext = cipher
         .encrypt(nonce, plaintext)
-        .map_err(|e| DnsError::SerializationError(format!("Encryption failed: {}", e)))?;
+        .map_err(|e| DnsError::SerializationError(format!("Encryption failed: {e}")))?;
 
     Ok((
         BASE64.encode(salt),
@@ -59,20 +59,20 @@ pub fn decrypt(
     // 解码 Base64
     let salt = BASE64
         .decode(salt_b64)
-        .map_err(|e| DnsError::SerializationError(format!("Invalid salt: {}", e)))?;
+        .map_err(|e| DnsError::SerializationError(format!("Invalid salt: {e}")))?;
     let nonce_bytes = BASE64
         .decode(nonce_b64)
-        .map_err(|e| DnsError::SerializationError(format!("Invalid nonce: {}", e)))?;
+        .map_err(|e| DnsError::SerializationError(format!("Invalid nonce: {e}")))?;
     let ciphertext = BASE64
         .decode(ciphertext_b64)
-        .map_err(|e| DnsError::SerializationError(format!("Invalid ciphertext: {}", e)))?;
+        .map_err(|e| DnsError::SerializationError(format!("Invalid ciphertext: {e}")))?;
 
     // 派生密钥
     let key = derive_key(password, &salt);
 
     // 创建解密器
     let cipher = Aes256Gcm::new_from_slice(&key)
-        .map_err(|e| DnsError::SerializationError(format!("Failed to create cipher: {}", e)))?;
+        .map_err(|e| DnsError::SerializationError(format!("Failed to create cipher: {e}")))?;
     let nonce = Nonce::from_slice(&nonce_bytes);
 
     // 解密

@@ -122,7 +122,7 @@ struct ModifyRecordResponse {
 
 // ============ DNSPod Provider 实现 ============
 
-/// 腾讯云 DNSPod Provider
+/// 腾讯云 `DNSPod` Provider
 pub struct DnspodProvider {
     client: Client,
     secret_id: String,
@@ -130,7 +130,7 @@ pub struct DnspodProvider {
     account_id: String,
 }
 
-/// DNSPod 错误码映射
+/// `DNSPod` 错误码映射
 impl ProviderErrorMapper for DnspodProvider {
     fn provider_name(&self) -> &'static str {
         "dnspod"
@@ -139,7 +139,7 @@ impl ProviderErrorMapper for DnspodProvider {
     fn map_error(&self, raw: RawApiError, context: ErrorContext) -> ProviderError {
         match raw.code.as_deref() {
             // 认证错误
-            Some("AuthFailure") | Some("AuthFailure.SecretIdNotFound") => {
+            Some("AuthFailure" | "AuthFailure.SecretIdNotFound") => {
                 ProviderError::InvalidCredentials {
                     provider: self.provider_name().to_string(),
                 }
@@ -212,22 +212,15 @@ impl DnspodProvider {
         let signed_headers = "content-type;host;x-tc-action";
         let hashed_payload = hex::encode(Sha256::digest(payload.as_bytes()));
         let canonical_request = format!(
-            "{}\n{}\n{}\n{}\n{}\n{}",
-            http_request_method,
-            canonical_uri,
-            canonical_query_string,
-            canonical_headers,
-            signed_headers,
-            hashed_payload
+            "{http_request_method}\n{canonical_uri}\n{canonical_query_string}\n{canonical_headers}\n{signed_headers}\n{hashed_payload}"
         );
 
         // 2. 拼接待签名字符串
         let algorithm = "TC3-HMAC-SHA256";
-        let credential_scope = format!("{}/{}/tc3_request", date, DNSPOD_SERVICE);
+        let credential_scope = format!("{date}/{DNSPOD_SERVICE}/tc3_request");
         let hashed_canonical_request = hex::encode(Sha256::digest(canonical_request.as_bytes()));
         let string_to_sign = format!(
-            "{}\n{}\n{}\n{}",
-            algorithm, timestamp, credential_scope, hashed_canonical_request
+            "{algorithm}\n{timestamp}\n{credential_scope}\n{hashed_canonical_request}"
         );
 
         // 3. 计算签名
@@ -267,9 +260,9 @@ impl DnspodProvider {
         let timestamp = Utc::now().timestamp();
         let authorization = self.sign(action, &payload, timestamp);
 
-        let url = format!("https://{}", DNSPOD_API_HOST);
-        log::debug!("POST {} Action: {}", url, action);
-        log::debug!("Request Body: {}", payload);
+        let url = format!("https://{DNSPOD_API_HOST}");
+        log::debug!("POST {url} Action: {action}");
+        log::debug!("Request Body: {payload}");
 
         let response = self
             .client
@@ -286,19 +279,19 @@ impl DnspodProvider {
             .map_err(|e| self.network_error(e))?;
 
         let status = response.status();
-        log::debug!("Response Status: {}", status);
+        log::debug!("Response Status: {status}");
 
         let response_text = response
             .text()
             .await
-            .map_err(|e| self.network_error(format!("读取响应失败: {}", e)))?;
+            .map_err(|e| self.network_error(format!("读取响应失败: {e}")))?;
 
-        log::debug!("Response Body: {}", response_text);
+        log::debug!("Response Body: {response_text}");
 
         let tc_response: TencentResponse<T> =
             serde_json::from_str(&response_text).map_err(|e| {
-                log::error!("JSON 解析失败: {}", e);
-                log::error!("原始响应: {}", response_text);
+                log::error!("JSON 解析失败: {e}");
+                log::error!("原始响应: {response_text}");
                 self.parse_error(e)
             })?;
 
@@ -316,7 +309,7 @@ impl DnspodProvider {
             .ok_or_else(|| self.parse_error("响应中缺少数据").into())
     }
 
-    /// 将 DNSPod 域名状态转换为内部状态
+    /// 将 `DNSPod` 域名状态转换为内部状态
     fn convert_domain_status(status: &str) -> DomainStatus {
         match status {
             "ENABLE" | "enable" => DomainStatus::Active,
@@ -326,7 +319,7 @@ impl DnspodProvider {
         }
     }
 
-    /// 将 DNSPod 记录类型转换为内部类型
+    /// 将 `DNSPod` 记录类型转换为内部类型
     fn convert_record_type(record_type: &str) -> Result<DnsRecordType> {
         match record_type.to_uppercase().as_str() {
             "A" => Ok(DnsRecordType::A),
@@ -340,12 +333,12 @@ impl DnspodProvider {
             _ => Err(ProviderError::InvalidParameter {
                 provider: "dnspod".to_string(),
                 param: "record_type".to_string(),
-                detail: format!("不支持的记录类型: {}", record_type),
+                detail: format!("不支持的记录类型: {record_type}"),
             }.into()),
         }
     }
 
-    /// 将内部记录类型转换为 DNSPod API 格式
+    /// 将内部记录类型转换为 `DNSPod` API 格式
     fn record_type_to_string(record_type: &DnsRecordType) -> String {
         match record_type {
             DnsRecordType::A => "A",
@@ -389,7 +382,7 @@ impl DnsProvider for DnspodProvider {
             Ok(_) => Ok(true),
             Err(DnsError::Provider(ProviderError::InvalidCredentials { .. })) => Ok(false),
             Err(e) => {
-                log::warn!("凭证验证失败: {}", e);
+                log::warn!("凭证验证失败: {e}");
                 Ok(false)
             }
         }

@@ -95,7 +95,7 @@ impl ProviderErrorMapper for HuaweicloudProvider {
     fn map_error(&self, raw: RawApiError, context: ErrorContext) -> ProviderError {
         match raw.code.as_deref() {
             // 认证错误
-            Some("APIGW.0301") | Some("APIGW.0101") => ProviderError::InvalidCredentials {
+            Some("APIGW.0301" | "APIGW.0101") => ProviderError::InvalidCredentials {
                 provider: self.provider_name().to_string(),
             },
             // 记录已存在
@@ -139,7 +139,7 @@ impl HuaweicloudProvider {
     }
 
     /// 生成华为云 SDK 签名
-    /// 参考: https://support.huaweicloud.com/devg-apisign/api-sign-algorithm-005.html
+    /// 参考: <https://support.huaweicloud.com/devg-apisign/api-sign-algorithm-005.html>
     fn sign(
         &self,
         method: &str,
@@ -153,7 +153,7 @@ impl HuaweicloudProvider {
         let canonical_uri = if uri.ends_with('/') {
             uri.to_string()
         } else {
-            format!("{}/", uri)
+            format!("{uri}/")
         };
 
         // 2. Query String 排序（按参数名升序）
@@ -161,7 +161,7 @@ impl HuaweicloudProvider {
             String::new()
         } else {
             let mut params: Vec<&str> = query.split('&').collect();
-            params.sort();
+            params.sort_unstable();
             params.join("&")
         };
 
@@ -185,25 +185,18 @@ impl HuaweicloudProvider {
 
         // 5. 构造规范请求
         let canonical_request = format!(
-            "{}\n{}\n{}\n{}\n{}\n{}",
-            method,
-            canonical_uri,
-            canonical_query,
-            canonical_headers,
-            signed_headers,
-            hashed_payload
+            "{method}\n{canonical_uri}\n{canonical_query}\n{canonical_headers}\n{signed_headers}\n{hashed_payload}"
         );
 
-        log::debug!("CanonicalRequest:\n{}", canonical_request);
+        log::debug!("CanonicalRequest:\n{canonical_request}");
 
         // 6. 构造待签名字符串（3 行格式）
         let hashed_canonical_request = hex::encode(Sha256::digest(canonical_request.as_bytes()));
         let string_to_sign = format!(
-            "SDK-HMAC-SHA256\n{}\n{}",
-            timestamp, hashed_canonical_request
+            "SDK-HMAC-SHA256\n{timestamp}\n{hashed_canonical_request}"
         );
 
-        log::debug!("StringToSign:\n{}", string_to_sign);
+        log::debug!("StringToSign:\n{string_to_sign}");
 
         // 7. 计算签名（直接用 SK）
         let signature = hex::encode(Self::hmac_sha256(
@@ -237,12 +230,12 @@ impl HuaweicloudProvider {
         let authorization = self.sign("GET", path, query, &headers, "", &timestamp);
 
         let url = if query.is_empty() {
-            format!("https://{}{}", HUAWEICLOUD_DNS_HOST, path)
+            format!("https://{HUAWEICLOUD_DNS_HOST}{path}")
         } else {
-            format!("https://{}{}?{}", HUAWEICLOUD_DNS_HOST, path, query)
+            format!("https://{HUAWEICLOUD_DNS_HOST}{path}?{query}")
         };
 
-        log::debug!("GET {}", url);
+        log::debug!("GET {url}");
 
         let response = self
             .client
@@ -258,9 +251,9 @@ impl HuaweicloudProvider {
         let response_text = response
             .text()
             .await
-            .map_err(|e| self.network_error(format!("读取响应失败: {}", e)))?;
+            .map_err(|e| self.network_error(format!("读取响应失败: {e}")))?;
 
-        log::debug!("Response Status: {}, Body: {}", status, response_text);
+        log::debug!("Response Status: {status}, Body: {response_text}");
 
         if !status.is_success() {
             if let Ok(error) = serde_json::from_str::<ErrorResponse>(&response_text) {
@@ -272,11 +265,11 @@ impl HuaweicloudProvider {
                     ErrorContext::default(),
                 ).into());
             }
-            return Err(self.unknown_error(RawApiError::new(format!("HTTP {}: {}", status, response_text))).into());
+            return Err(self.unknown_error(RawApiError::new(format!("HTTP {status}: {response_text}"))).into());
         }
 
         serde_json::from_str(&response_text).map_err(|e| {
-            log::error!("JSON 解析失败: {}", e);
+            log::error!("JSON 解析失败: {e}");
             self.parse_error(e).into()
         })
     }
@@ -301,8 +294,8 @@ impl HuaweicloudProvider {
 
         let authorization = self.sign("POST", path, "", &headers, &payload, &timestamp);
 
-        let url = format!("https://{}{}", HUAWEICLOUD_DNS_HOST, path);
-        log::debug!("POST {} Body: {}", url, payload);
+        let url = format!("https://{HUAWEICLOUD_DNS_HOST}{path}");
+        log::debug!("POST {url} Body: {payload}");
 
         let response = self
             .client
@@ -320,9 +313,9 @@ impl HuaweicloudProvider {
         let response_text = response
             .text()
             .await
-            .map_err(|e| self.network_error(format!("读取响应失败: {}", e)))?;
+            .map_err(|e| self.network_error(format!("读取响应失败: {e}")))?;
 
-        log::debug!("Response Status: {}, Body: {}", status, response_text);
+        log::debug!("Response Status: {status}, Body: {response_text}");
 
         if !status.is_success() {
             if let Ok(error) = serde_json::from_str::<ErrorResponse>(&response_text) {
@@ -334,11 +327,11 @@ impl HuaweicloudProvider {
                     ErrorContext::default(),
                 ).into());
             }
-            return Err(self.unknown_error(RawApiError::new(format!("HTTP {}: {}", status, response_text))).into());
+            return Err(self.unknown_error(RawApiError::new(format!("HTTP {status}: {response_text}"))).into());
         }
 
         serde_json::from_str(&response_text).map_err(|e| {
-            log::error!("JSON 解析失败: {}", e);
+            log::error!("JSON 解析失败: {e}");
             self.parse_error(e).into()
         })
     }
@@ -363,8 +356,8 @@ impl HuaweicloudProvider {
 
         let authorization = self.sign("PUT", path, "", &headers, &payload, &timestamp);
 
-        let url = format!("https://{}{}", HUAWEICLOUD_DNS_HOST, path);
-        log::debug!("PUT {} Body: {}", url, payload);
+        let url = format!("https://{HUAWEICLOUD_DNS_HOST}{path}");
+        log::debug!("PUT {url} Body: {payload}");
 
         let response = self
             .client
@@ -382,9 +375,9 @@ impl HuaweicloudProvider {
         let response_text = response
             .text()
             .await
-            .map_err(|e| self.network_error(format!("读取响应失败: {}", e)))?;
+            .map_err(|e| self.network_error(format!("读取响应失败: {e}")))?;
 
-        log::debug!("Response Status: {}, Body: {}", status, response_text);
+        log::debug!("Response Status: {status}, Body: {response_text}");
 
         if !status.is_success() {
             if let Ok(error) = serde_json::from_str::<ErrorResponse>(&response_text) {
@@ -396,11 +389,11 @@ impl HuaweicloudProvider {
                     ErrorContext::default(),
                 ).into());
             }
-            return Err(self.unknown_error(RawApiError::new(format!("HTTP {}: {}", status, response_text))).into());
+            return Err(self.unknown_error(RawApiError::new(format!("HTTP {status}: {response_text}"))).into());
         }
 
         serde_json::from_str(&response_text).map_err(|e| {
-            log::error!("JSON 解析失败: {}", e);
+            log::error!("JSON 解析失败: {e}");
             self.parse_error(e).into()
         })
     }
@@ -417,8 +410,8 @@ impl HuaweicloudProvider {
 
         let authorization = self.sign("DELETE", path, "", &headers, "", &timestamp);
 
-        let url = format!("https://{}{}", HUAWEICLOUD_DNS_HOST, path);
-        log::debug!("DELETE {}", url);
+        let url = format!("https://{HUAWEICLOUD_DNS_HOST}{path}");
+        log::debug!("DELETE {url}");
 
         let response = self
             .client
@@ -436,7 +429,7 @@ impl HuaweicloudProvider {
             let response_text = response
                 .text()
                 .await
-                .map_err(|e| self.network_error(format!("读取响应失败: {}", e)))?;
+                .map_err(|e| self.network_error(format!("读取响应失败: {e}")))?;
 
             if let Ok(error) = serde_json::from_str::<ErrorResponse>(&response_text) {
                 return Err(self.map_error(
@@ -447,15 +440,15 @@ impl HuaweicloudProvider {
                     ErrorContext::default(),
                 ).into());
             }
-            return Err(self.unknown_error(RawApiError::new(format!("HTTP {}: {}", status, response_text))).into());
+            return Err(self.unknown_error(RawApiError::new(format!("HTTP {status}: {response_text}"))).into());
         }
 
         Ok(())
     }
 
     /// 将华为云域名状态转换为内部状态
-    /// 华为云状态：ACTIVE, PENDING_CREATE, PENDING_UPDATE, PENDING_DELETE,
-    /// PENDING_FREEZE, FREEZE, ILLEGAL, POLICE, PENDING_DISABLE, DISABLE, ERROR
+    /// 华为云状态：ACTIVE, `PENDING_CREATE`, `PENDING_UPDATE`, `PENDING_DELETE`,
+    /// `PENDING_FREEZE`, FREEZE, ILLEGAL, POLICE, `PENDING_DISABLE`, DISABLE, ERROR
     fn convert_domain_status(status: Option<&str>) -> DomainStatus {
         match status {
             Some("ACTIVE") => DomainStatus::Active,
@@ -488,7 +481,7 @@ impl HuaweicloudProvider {
             _ => Err(ProviderError::InvalidParameter {
                 provider: "huaweicloud".to_string(),
                 param: "record_type".to_string(),
-                detail: format!("不支持的记录类型: {}", record_type),
+                detail: format!("不支持的记录类型: {record_type}"),
             }.into()),
         }
     }
@@ -520,7 +513,7 @@ impl HuaweicloudProvider {
 
         if record == domain {
             "@".to_string()
-        } else if record.ends_with(&format!(".{}", domain)) {
+        } else if record.ends_with(&format!(".{domain}")) {
             record[..record.len() - domain.len() - 1].to_string()
         } else {
             record
@@ -542,7 +535,7 @@ impl DnsProvider for HuaweicloudProvider {
             Ok(_) => Ok(true),
             Err(DnsError::Provider(ProviderError::InvalidCredentials { .. })) => Ok(false),
             Err(e) => {
-                log::warn!("凭证验证失败: {}", e);
+                log::warn!("凭证验证失败: {e}");
                 Ok(false)
             }
         }
@@ -552,7 +545,7 @@ impl DnsProvider for HuaweicloudProvider {
         // 华为云使用 offset/limit 分页
         let offset = (params.page - 1) * params.page_size;
         let limit = params.page_size.min(500); // 华为云最大支持 500
-        let query = format!("type=public&offset={}&limit={}", offset, limit);
+        let query = format!("type=public&offset={offset}&limit={limit}");
 
         let response: ListZonesResponse = self.get("/v2/zones", &query).await?;
 
@@ -606,7 +599,7 @@ impl DnsProvider for HuaweicloudProvider {
         // 华为云使用 offset/limit 分页
         let offset = (params.page - 1) * params.page_size;
         let limit = params.page_size.min(500); // 华为云最大支持 500
-        let mut query = format!("offset={}&limit={}", offset, limit);
+        let mut query = format!("offset={offset}&limit={limit}");
 
         // 添加搜索关键词（华为云支持 name 参数模糊匹配）
         if let Some(ref keyword) = params.keyword {
@@ -622,7 +615,7 @@ impl DnsProvider for HuaweicloudProvider {
             }
         }
 
-        let path = format!("/v2/zones/{}/recordsets", domain_id);
+        let path = format!("/v2/zones/{domain_id}/recordsets");
         let response: ListRecordSetsResponse = self.get(&path, &query).await?;
 
         let total_count = response.metadata.and_then(|m| m.total_count).unwrap_or(0);
@@ -784,7 +777,7 @@ impl DnsProvider for HuaweicloudProvider {
     }
 
     async fn delete_record(&self, record_id: &str, domain_id: &str) -> Result<()> {
-        let path = format!("/v2/zones/{}/recordsets/{}", domain_id, record_id);
+        let path = format!("/v2/zones/{domain_id}/recordsets/{record_id}");
         self.delete(&path).await
     }
 }

@@ -1,7 +1,7 @@
 use tauri::State;
 
 use crate::error::DnsError;
-use crate::types::*;
+use crate::types::{ApiResponse, PaginatedResponse, DnsRecord, RecordQueryParams, CreateDnsRecordRequest, UpdateDnsRecordRequest, BatchDeleteResult, BatchDeleteRequest, BatchDeleteFailure};
 use crate::AppState;
 
 /// 列出域名下的所有 DNS 记录（分页 + 搜索）

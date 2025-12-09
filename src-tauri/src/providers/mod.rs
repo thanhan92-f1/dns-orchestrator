@@ -83,11 +83,11 @@ pub trait ProviderErrorMapper {
 /// 用于在映射错误时提供额外信息
 #[derive(Debug, Clone, Default)]
 pub struct ErrorContext {
-    /// 记录名称（用于 RecordExists 等错误）
+    /// 记录名称（用于 `RecordExists` 等错误）
     pub record_name: Option<String>,
-    /// 记录 ID（用于 RecordNotFound 等错误）
+    /// 记录 ID（用于 `RecordNotFound` 等错误）
     pub record_id: Option<String>,
-    /// 域名（用于 DomainNotFound 等错误）
+    /// 域名（用于 `DomainNotFound` 等错误）
     pub domain: Option<String>,
 }
 

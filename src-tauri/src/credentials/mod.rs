@@ -13,7 +13,7 @@ pub use android::AndroidCredentialStore;
 use crate::error::Result;
 use std::collections::HashMap;
 
-/// 凭证映射类型：account_id -> credentials
+/// `凭证映射类型：account_id` -> credentials
 pub type CredentialsMap = HashMap<String, HashMap<String, String>>;
 
 /// 凭证存储 Trait
