@@ -174,7 +174,7 @@ pub fn run() {
 /// 4. 注册到 `ProviderRegistry`
 fn restore_accounts(state: &AppState) -> crate::error::Result<()> {
     use crate::providers::create_provider;
-    use crate::types::AccountStatus;
+    use crate::types::{AccountStatus, ProviderCredentials};
 
     // 1. 加载账户元数据
     let mut accounts = AccountStore::load_accounts(&state.app_handle)?;
@@ -223,16 +223,25 @@ fn restore_accounts(state: &AppState) -> crate::error::Result<()> {
             continue;
         };
 
-        // 3.2 确定 provider 类型
-        let provider_type = match &account.provider {
-            crate::types::DnsProvider::Cloudflare => "cloudflare",
-            crate::types::DnsProvider::Aliyun => "aliyun",
-            crate::types::DnsProvider::Dnspod => "dnspod",
-            crate::types::DnsProvider::Huaweicloud => "huaweicloud",
-        };
+        // 3.2 转换凭证格式
+        let typed_credentials =
+            match ProviderCredentials::from_map(&account.provider, &credentials) {
+                Ok(c) => c,
+                Err(e) => {
+                    log::warn!(
+                        "Failed to parse credentials for account {}: {}",
+                        account.id,
+                        e
+                    );
+                    account.status = Some(AccountStatus::Error);
+                    account.error = Some(format!("凭证格式错误: {e}"));
+                    failed_count += 1;
+                    continue;
+                }
+            };
 
         // 3.3 重建 Provider 实例
-        let provider = match create_provider(provider_type, &credentials) {
+        let provider = match create_provider(typed_credentials) {
             Ok(p) => p,
             Err(e) => {
                 log::warn!(

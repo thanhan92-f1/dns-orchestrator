@@ -13,7 +13,12 @@ pub use android::AndroidCredentialStore;
 use crate::error::Result;
 use std::collections::HashMap;
 
-/// `凭证映射类型：account_id` -> credentials
+/// 凭证映射类型：`account_id` -> credentials
+///
+/// TODO: 重构为 `HashMap<String, ProviderCredentials>` 以获得类型安全
+/// - 当前每次使用都要 `ProviderCredentials::from_map/to_map` 转换
+/// - 计划方案：启动时检测旧格式，自动迁移到新格式
+/// - 涉及文件：credentials/*.rs, commands/account.rs, lib.rs, types.rs
 pub type CredentialsMap = HashMap<String, HashMap<String, String>>;
 
 /// 凭证存储 Trait

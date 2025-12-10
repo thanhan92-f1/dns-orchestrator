@@ -1,94 +1,25 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-// ============ 分页相关类型 ============
+// ============ Re-export 库类型 ============
 
-/// 分页参数
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PaginationParams {
-    pub page: u32,
-    pub page_size: u32,
-}
+pub use dns_orchestrator_provider::{
+    // 分页类型
+    PaginatedResponse, PaginationParams, RecordQueryParams,
+    // DNS 记录类型
+    CreateDnsRecordRequest, DnsRecord, DnsRecordType, UpdateDnsRecordRequest,
+    // Provider 元数据类型
+    FieldType, ProviderCredentials, ProviderMetadata,
+    // Domain 相关（重命名避免冲突）
+    Domain as LibDomain, DomainStatus, ProviderType,
+};
 
-impl Default for PaginationParams {
-    fn default() -> Self {
-        Self {
-            page: 1,
-            page_size: 20,
-        }
-    }
-}
+// ============ 类型别名（保持兼容性）============
 
-/// DNS 记录查询参数（包含搜索和过滤）
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RecordQueryParams {
-    pub page: u32,
-    pub page_size: u32,
-    /// 搜索关键词（匹配记录名称或值）
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub keyword: Option<String>,
-    /// 记录类型过滤
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub record_type: Option<String>,
-}
+/// Provider 类型枚举别名
+pub type DnsProvider = ProviderType;
 
-impl Default for RecordQueryParams {
-    fn default() -> Self {
-        Self {
-            page: 1,
-            page_size: 20,
-            keyword: None,
-            record_type: None,
-        }
-    }
-}
-
-impl RecordQueryParams {
-    /// 转换为基础分页参数
-    pub fn to_pagination(&self) -> PaginationParams {
-        PaginationParams {
-            page: self.page,
-            page_size: self.page_size,
-        }
-    }
-}
-
-/// 分页响应
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PaginatedResponse<T> {
-    pub items: Vec<T>,
-    pub page: u32,
-    pub page_size: u32,
-    pub total_count: u32,
-    pub has_more: bool,
-}
-
-impl<T> PaginatedResponse<T> {
-    pub fn new(items: Vec<T>, page: u32, page_size: u32, total_count: u32) -> Self {
-        let has_more = (page * page_size) < total_count;
-        Self {
-            items,
-            page,
-            page_size,
-            total_count,
-            has_more,
-        }
-    }
-}
-
-// ============ Provider 相关类型 ============
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum DnsProvider {
-    Cloudflare,
-    Aliyun,
-    Dnspod,
-    Huaweicloud,
-}
+// ============ 应用层 Provider 相关类型 ============
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -119,16 +50,9 @@ pub struct CreateAccountRequest {
     pub credentials: HashMap<String, String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum DomainStatus {
-    Active,
-    Paused,
-    Pending,
-    Error,
-    Unknown,
-}
+// ============ 应用层 Domain（包含 account_id）============
 
+/// 应用层 Domain 类型（包含 account_id）
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Domain {
     pub id: String,
@@ -141,62 +65,21 @@ pub struct Domain {
     pub record_count: Option<u32>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "UPPERCASE")]
-pub enum DnsRecordType {
-    A,
-    Aaaa,
-    Cname,
-    Mx,
-    Txt,
-    Ns,
-    Srv,
-    Caa,
+impl Domain {
+    /// 从库的 Domain 构造应用层 Domain
+    pub fn from_lib(lib_domain: LibDomain, account_id: String) -> Self {
+        Self {
+            id: lib_domain.id,
+            name: lib_domain.name,
+            account_id,
+            provider: lib_domain.provider,
+            status: lib_domain.status,
+            record_count: lib_domain.record_count,
+        }
+    }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DnsRecord {
-    pub id: String,
-    #[serde(rename = "domainId")]
-    pub domain_id: String,
-    #[serde(rename = "type")]
-    pub record_type: DnsRecordType,
-    pub name: String,
-    pub value: String,
-    pub ttl: u32,
-    pub priority: Option<u16>,
-    pub proxied: Option<bool>,
-    #[serde(rename = "createdAt")]
-    pub created_at: Option<String>,
-    #[serde(rename = "updatedAt")]
-    pub updated_at: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CreateDnsRecordRequest {
-    #[serde(rename = "domainId")]
-    pub domain_id: String,
-    #[serde(rename = "type")]
-    pub record_type: DnsRecordType,
-    pub name: String,
-    pub value: String,
-    pub ttl: u32,
-    pub priority: Option<u16>,
-    pub proxied: Option<bool>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UpdateDnsRecordRequest {
-    #[serde(rename = "domainId")]
-    pub domain_id: String,
-    #[serde(rename = "type")]
-    pub record_type: DnsRecordType,
-    pub name: String,
-    pub value: String,
-    pub ttl: u32,
-    pub priority: Option<u16>,
-    pub proxied: Option<bool>,
-}
+// ============ API 响应类型 ============
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ApiResponse<T> {
@@ -230,39 +113,6 @@ impl<T> ApiResponse<T> {
             }),
         }
     }
-}
-
-/// 提供商凭证字段定义
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProviderCredentialField {
-    pub key: String,
-    pub label: String,
-    #[serde(rename = "type")]
-    pub field_type: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub placeholder: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub help_text: Option<String>,
-}
-
-/// 提供商支持的功能
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct ProviderFeatures {
-    /// 是否支持代理功能 (如 Cloudflare 的 CDN 代理)
-    pub proxy: bool,
-}
-
-/// 提供商元数据
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProviderMetadata {
-    pub id: String,
-    pub name: String,
-    pub description: String,
-    pub required_fields: Vec<ProviderCredentialField>,
-    pub features: ProviderFeatures,
 }
 
 // ============ 工具箱相关类型 ============

@@ -5,9 +5,10 @@ use crate::error::DnsError;
 use crate::providers::create_provider;
 use crate::storage::AccountStore;
 use crate::types::{
-    Account, AccountStatus, ApiResponse, CreateAccountRequest, DnsProvider, ExportAccountsRequest,
+    Account, AccountStatus, ApiResponse, CreateAccountRequest, ExportAccountsRequest,
     ExportAccountsResponse, ExportFile, ExportFileHeader, ExportedAccount, ImportAccountsRequest,
-    ImportFailure, ImportPreview, ImportPreviewAccount, ImportResult, ProviderMetadata,
+    ImportFailure, ImportPreview, ImportPreviewAccount, ImportResult, ProviderCredentials,
+    ProviderMetadata,
 };
 use crate::AppState;
 
@@ -30,15 +31,10 @@ pub async fn create_account(
     state: State<'_, AppState>,
     request: CreateAccountRequest,
 ) -> Result<ApiResponse<Account>, DnsError> {
-    let provider_type = match &request.provider {
-        DnsProvider::Cloudflare => "cloudflare",
-        DnsProvider::Aliyun => "aliyun",
-        DnsProvider::Dnspod => "dnspod",
-        DnsProvider::Huaweicloud => "huaweicloud",
-    };
-
-    // 1. 创建 provider 实例
-    let provider = create_provider(provider_type, &request.credentials.clone())?;
+    // 1. 转换凭证并创建 provider 实例
+    let credentials = ProviderCredentials::from_map(&request.provider, &request.credentials)
+        .map_err(|e| DnsError::CredentialError(e.to_string()))?;
+    let provider = create_provider(credentials)?;
 
     // 2. 验证凭证
     let is_valid = provider.validate_credentials().await?;
@@ -354,15 +350,19 @@ pub async fn import_accounts(
     let now = chrono::Utc::now().to_rfc3339();
 
     for exported in accounts {
-        // 2.1 创建 provider 实例验证凭证
-        let provider_type = match &exported.provider {
-            DnsProvider::Cloudflare => "cloudflare",
-            DnsProvider::Aliyun => "aliyun",
-            DnsProvider::Dnspod => "dnspod",
-            DnsProvider::Huaweicloud => "huaweicloud",
-        };
-
-        let provider = match create_provider(provider_type, &exported.credentials.clone()) {
+        // 2.1 转换凭证并创建 provider 实例
+        let credentials =
+            match ProviderCredentials::from_map(&exported.provider, &exported.credentials) {
+                Ok(c) => c,
+                Err(e) => {
+                    failures.push(ImportFailure {
+                        name: exported.name.clone(),
+                        reason: format!("凭证格式错误: {e}"),
+                    });
+                    continue;
+                }
+            };
+        let provider = match create_provider(credentials) {
             Ok(p) => p,
             Err(e) => {
                 failures.push(ImportFailure {

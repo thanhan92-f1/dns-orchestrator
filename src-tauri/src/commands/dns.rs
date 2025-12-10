@@ -3,7 +3,7 @@ use tauri::State;
 use crate::error::DnsError;
 use crate::types::{
     ApiResponse, BatchDeleteFailure, BatchDeleteRequest, BatchDeleteResult, CreateDnsRecordRequest,
-    DnsRecord, PaginatedResponse, RecordQueryParams, UpdateDnsRecordRequest,
+    DnsRecord, DnsRecordType, PaginatedResponse, RecordQueryParams, UpdateDnsRecordRequest,
 };
 use crate::AppState;
 
@@ -16,7 +16,7 @@ pub async fn list_dns_records(
     page: Option<u32>,
     page_size: Option<u32>,
     keyword: Option<String>,
-    record_type: Option<String>,
+    record_type: Option<DnsRecordType>,
 ) -> Result<ApiResponse<PaginatedResponse<DnsRecord>>, DnsError> {
     // 获取 provider
     let provider = state

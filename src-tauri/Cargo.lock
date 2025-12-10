@@ -1358,6 +1358,7 @@ dependencies = [
  "base64 0.22.1",
  "chrono",
  "cocoa",
+ "dns-orchestrator-provider",
  "futures",
  "hex",
  "hickory-resolver",
@@ -1392,6 +1393,24 @@ dependencies = [
  "webpki-roots 0.26.11",
  "whois-rust",
  "x509-parser",
+]
+
+[[package]]
+name = "dns-orchestrator-provider"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "hex",
+ "hmac",
+ "log",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 2.0.17",
+ "urlencoding",
+ "uuid",
 ]
 
 [[package]]

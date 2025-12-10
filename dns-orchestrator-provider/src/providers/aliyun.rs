@@ -4,13 +4,13 @@ use hmac::{Hmac, Mac};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 
-use super::{DnsProvider, ErrorContext, ProviderErrorMapper, RawApiError};
 use crate::error::{DnsError, ProviderError, Result};
+use crate::traits::{DnsProvider, ErrorContext, ProviderErrorMapper, RawApiError};
 use crate::types::{
     CreateDnsRecordRequest, DnsRecord, DnsRecordType, Domain, DomainStatus, PaginatedResponse,
-    PaginationParams, RecordQueryParams, UpdateDnsRecordRequest,
+    PaginationParams, ProviderType, RecordQueryParams, UpdateDnsRecordRequest,
 };
 
 const ALIYUN_DNS_HOST: &str = "alidns.cn-hangzhou.aliyuncs.com";
@@ -190,7 +190,6 @@ pub struct AliyunProvider {
     client: Client,
     access_key_id: String,
     access_key_secret: String,
-    account_id: String,
 }
 
 /// 阿里云错误码映射
@@ -234,34 +233,11 @@ impl ProviderErrorMapper for AliyunProvider {
 }
 
 impl AliyunProvider {
-    pub fn new(credentials: &HashMap<String, String>) -> Self {
-        let access_key_id = credentials.get("accessKeyId").cloned().unwrap_or_default();
-        let access_key_secret = credentials
-            .get("accessKeySecret")
-            .cloned()
-            .unwrap_or_default();
-        let account_id = uuid::Uuid::new_v4().to_string();
-
+    pub fn new(access_key_id: String, access_key_secret: String) -> Self {
         Self {
             client: Client::new(),
             access_key_id,
             access_key_secret,
-            account_id,
-        }
-    }
-
-    pub fn with_account_id(credentials: &HashMap<String, String>, account_id: String) -> Self {
-        let access_key_id = credentials.get("accessKeyId").cloned().unwrap_or_default();
-        let access_key_secret = credentials
-            .get("accessKeySecret")
-            .cloned()
-            .unwrap_or_default();
-
-        Self {
-            client: Client::new(),
-            access_key_id,
-            access_key_secret,
-            account_id,
         }
     }
 
@@ -488,8 +464,7 @@ impl DnsProvider for AliyunProvider {
             .map(|d| Domain {
                 id: d.domain_id.unwrap_or_else(|| d.domain_name.clone()),
                 name: d.domain_name,
-                account_id: self.account_id.clone(),
-                provider: crate::types::DnsProvider::Aliyun,
+                provider: ProviderType::Aliyun,
                 status: Self::convert_domain_status(d.domain_status.as_deref()),
                 record_count: d.record_count,
             })
@@ -548,7 +523,7 @@ impl DnsProvider for AliyunProvider {
             page_number: params.page,
             page_size: params.page_size.min(100), // 阿里云最大支持 100
             rr_keyword: params.keyword.clone().filter(|k| !k.is_empty()),
-            record_type: params.record_type.clone().filter(|t| !t.is_empty()),
+            record_type: params.record_type.as_ref().map(Self::record_type_to_string),
         };
 
         let response: DescribeDomainRecordsResponse =

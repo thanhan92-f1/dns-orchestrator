@@ -1,6 +1,6 @@
 use tauri::State;
 
-use crate::error::{DnsError, ProviderError};
+use crate::error::{DnsError, LibDnsError, ProviderError};
 use crate::types::{AccountStatus, ApiResponse, Domain, PaginatedResponse, PaginationParams};
 use crate::AppState;
 
@@ -37,15 +37,30 @@ pub async fn list_domains(
 
     // 调用 provider 获取域名列表
     match provider.list_domains(&params).await {
-        Ok(response) => Ok(ApiResponse::success(response)),
-        Err(DnsError::Provider(ProviderError::InvalidCredentials { .. })) => {
+        Ok(lib_response) => {
+            // 将库的 Domain 转换为应用层的 Domain（添加 account_id）
+            let domains: Vec<Domain> = lib_response
+                .items
+                .into_iter()
+                .map(|d| Domain::from_lib(d, account_id.clone()))
+                .collect();
+
+            let response = PaginatedResponse::new(
+                domains,
+                lib_response.page,
+                lib_response.page_size,
+                lib_response.total_count,
+            );
+            Ok(ApiResponse::success(response))
+        }
+        Err(LibDnsError::Provider(ProviderError::InvalidCredentials { provider })) => {
             // 凭证失效，更新账户状态
             mark_account_invalid(&state, &account_id, "凭证已失效").await;
             Err(DnsError::Provider(ProviderError::InvalidCredentials {
-                provider: "unknown".to_string(),
+                provider,
             }))
         }
-        Err(e) => Err(e),
+        Err(e) => Err(DnsError::Library(e)),
     }
 }
 
@@ -64,7 +79,10 @@ pub async fn get_domain(
         .ok_or_else(|| DnsError::AccountNotFound(account_id.clone()))?;
 
     // 调用 provider 获取域名详情
-    let domain = provider.get_domain(&domain_id).await?;
+    let lib_domain = provider.get_domain(&domain_id).await?;
+
+    // 转换为应用层的 Domain（添加 account_id）
+    let domain = Domain::from_lib(lib_domain, account_id);
 
     Ok(ApiResponse::success(domain))
 }

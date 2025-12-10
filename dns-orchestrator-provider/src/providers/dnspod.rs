@@ -4,13 +4,12 @@ use hmac::{Hmac, Mac};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::collections::HashMap;
 
-use super::{DnsProvider, ErrorContext, ProviderErrorMapper, RawApiError};
 use crate::error::{DnsError, ProviderError, Result};
+use crate::traits::{DnsProvider, ErrorContext, ProviderErrorMapper, RawApiError};
 use crate::types::{
     CreateDnsRecordRequest, DnsRecord, DnsRecordType, Domain, DomainStatus, PaginatedResponse,
-    PaginationParams, RecordQueryParams, UpdateDnsRecordRequest,
+    PaginationParams, ProviderType, RecordQueryParams, UpdateDnsRecordRequest,
 };
 
 const DNSPOD_API_HOST: &str = "dnspod.tencentcloudapi.com";
@@ -127,7 +126,6 @@ pub struct DnspodProvider {
     client: Client,
     secret_id: String,
     secret_key: String,
-    account_id: String,
 }
 
 /// `DNSPod` 错误码映射
@@ -168,28 +166,11 @@ impl ProviderErrorMapper for DnspodProvider {
 }
 
 impl DnspodProvider {
-    pub fn new(credentials: &HashMap<String, String>) -> Self {
-        let secret_id = credentials.get("secretId").cloned().unwrap_or_default();
-        let secret_key = credentials.get("secretKey").cloned().unwrap_or_default();
-        let account_id = uuid::Uuid::new_v4().to_string();
-
+    pub fn new(secret_id: String, secret_key: String) -> Self {
         Self {
             client: Client::new(),
             secret_id,
             secret_key,
-            account_id,
-        }
-    }
-
-    pub fn with_account_id(credentials: &HashMap<String, String>, account_id: String) -> Self {
-        let secret_id = credentials.get("secretId").cloned().unwrap_or_default();
-        let secret_key = credentials.get("secretKey").cloned().unwrap_or_default();
-
-        Self {
-            client: Client::new(),
-            secret_id,
-            secret_key,
-            account_id,
         }
     }
 
@@ -420,8 +401,7 @@ impl DnsProvider for DnspodProvider {
             .map(|d| Domain {
                 id: d.domain_id.to_string(),
                 name: d.name,
-                account_id: self.account_id.clone(),
-                provider: crate::types::DnsProvider::Dnspod,
+                provider: ProviderType::Dnspod,
                 status: Self::convert_domain_status(&d.status),
                 record_count: d.record_count,
             })
@@ -481,7 +461,7 @@ impl DnsProvider for DnspodProvider {
             offset,
             limit: params.page_size.min(100),
             keyword: params.keyword.clone().filter(|k| !k.is_empty()),
-            record_type: params.record_type.clone().filter(|t| !t.is_empty()),
+            record_type: params.record_type.as_ref().map(Self::record_type_to_string),
         };
 
         // DNSPod API 在记录为空时返回错误而不是空列表，需要特殊处理

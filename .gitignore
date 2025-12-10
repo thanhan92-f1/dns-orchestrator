@@ -28,3 +28,6 @@ dist-ssr
 *.jks
 keystore.properties
 keystore.base64
+
+# cargo build
+target/

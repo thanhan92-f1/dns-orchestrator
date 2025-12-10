@@ -1,13 +1,12 @@
 use async_trait::async_trait;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
-use super::{DnsProvider, ErrorContext, ProviderErrorMapper, RawApiError};
 use crate::error::{ProviderError, Result};
+use crate::traits::{DnsProvider, ErrorContext, ProviderErrorMapper, RawApiError};
 use crate::types::{
     CreateDnsRecordRequest, DnsRecord, DnsRecordType, Domain, DomainStatus, PaginatedResponse,
-    PaginationParams, RecordQueryParams, UpdateDnsRecordRequest,
+    PaginationParams, ProviderType, RecordQueryParams, UpdateDnsRecordRequest,
 };
 
 const CF_API_BASE: &str = "https://api.cloudflare.com/client/v4";
@@ -68,7 +67,6 @@ struct CloudflareDnsRecord {
 pub struct CloudflareProvider {
     client: Client,
     api_token: String,
-    account_id: String,
 }
 
 /// Cloudflare 错误码映射
@@ -109,25 +107,10 @@ impl ProviderErrorMapper for CloudflareProvider {
 }
 
 impl CloudflareProvider {
-    pub fn new(credentials: &HashMap<String, String>) -> Self {
-        let api_token = credentials.get("apiToken").cloned().unwrap_or_default();
-
-        let account_id = uuid::Uuid::new_v4().to_string();
-
+    pub fn new(api_token: String) -> Self {
         Self {
             client: Client::new(),
             api_token,
-            account_id,
-        }
-    }
-
-    pub fn with_account_id(credentials: &HashMap<String, String>, account_id: String) -> Self {
-        let api_token = credentials.get("apiToken").cloned().unwrap_or_default();
-
-        Self {
-            client: Client::new(),
-            api_token,
-            account_id,
         }
     }
 
@@ -424,7 +407,7 @@ impl CloudflareProvider {
 
     /// 将 Cloudflare zone 转换为 Domain
     /// Cloudflare 状态：active, pending, initializing, moved
-    fn zone_to_domain(&self, zone: CloudflareZone) -> Domain {
+    fn zone_to_domain(zone: CloudflareZone) -> Domain {
         let status = match zone.status.as_str() {
             "active" => DomainStatus::Active,
             "pending" | "initializing" => DomainStatus::Pending,
@@ -435,8 +418,7 @@ impl CloudflareProvider {
         Domain {
             id: zone.id,
             name: zone.name,
-            account_id: self.account_id.clone(),
-            provider: crate::types::DnsProvider::Cloudflare,
+            provider: ProviderType::Cloudflare,
             status,
             record_count: None,
         }
@@ -528,7 +510,7 @@ impl DnsProvider for CloudflareProvider {
     async fn list_domains(&self, params: &PaginationParams) -> Result<PaginatedResponse<Domain>> {
         let (zones, total_count): (Vec<CloudflareZone>, u32) =
             self.get_paginated("/zones", params).await?;
-        let domains = zones.into_iter().map(|z| self.zone_to_domain(z)).collect();
+        let domains = zones.into_iter().map(Self::zone_to_domain).collect();
         Ok(PaginatedResponse::new(
             domains,
             params.page,
@@ -539,7 +521,7 @@ impl DnsProvider for CloudflareProvider {
 
     async fn get_domain(&self, domain_id: &str) -> Result<Domain> {
         let zone: CloudflareZone = self.get(&format!("/zones/{domain_id}")).await?;
-        Ok(self.zone_to_domain(zone))
+        Ok(Self::zone_to_domain(zone))
     }
 
     async fn list_records(
@@ -568,9 +550,8 @@ impl DnsProvider for CloudflareProvider {
 
         // 添加记录类型过滤
         if let Some(ref record_type) = params.record_type {
-            if !record_type.is_empty() {
-                url.push_str(&format!("&type={}", urlencoding::encode(record_type)));
-            }
+            let type_str = format!("{:?}", record_type).to_uppercase();
+            url.push_str(&format!("&type={}", urlencoding::encode(&type_str)));
         }
 
         log::debug!("GET {CF_API_BASE}{url}");

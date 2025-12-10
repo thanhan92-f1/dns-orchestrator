@@ -4,13 +4,12 @@ use hmac::{Hmac, Mac};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::collections::HashMap;
 
-use super::{DnsProvider, ErrorContext, ProviderErrorMapper, RawApiError};
 use crate::error::{DnsError, ProviderError, Result};
+use crate::traits::{DnsProvider, ErrorContext, ProviderErrorMapper, RawApiError};
 use crate::types::{
     CreateDnsRecordRequest, DnsRecord, DnsRecordType, Domain, DomainStatus, PaginatedResponse,
-    PaginationParams, RecordQueryParams, UpdateDnsRecordRequest,
+    PaginationParams, ProviderType, RecordQueryParams, UpdateDnsRecordRequest,
 };
 
 const HUAWEICLOUD_DNS_HOST: &str = "dns.myhuaweicloud.com";
@@ -83,7 +82,6 @@ pub struct HuaweicloudProvider {
     client: Client,
     access_key_id: String,
     secret_access_key: String,
-    account_id: String,
 }
 
 /// 华为云错误码映射
@@ -122,19 +120,11 @@ impl ProviderErrorMapper for HuaweicloudProvider {
 }
 
 impl HuaweicloudProvider {
-    pub fn new(credentials: &HashMap<String, String>) -> Self {
-        let access_key_id = credentials.get("accessKeyId").cloned().unwrap_or_default();
-        let secret_access_key = credentials
-            .get("secretAccessKey")
-            .cloned()
-            .unwrap_or_default();
-        let account_id = uuid::Uuid::new_v4().to_string();
-
+    pub fn new(access_key_id: String, secret_access_key: String) -> Self {
         Self {
             client: Client::new(),
             access_key_id,
             secret_access_key,
-            account_id,
         }
     }
 
@@ -570,8 +560,7 @@ impl DnsProvider for HuaweicloudProvider {
             .map(|z| Domain {
                 id: z.id,
                 name: Self::normalize_domain_name(&z.name),
-                account_id: self.account_id.clone(),
-                provider: crate::types::DnsProvider::Huaweicloud,
+                provider: ProviderType::Huaweicloud,
                 status: Self::convert_domain_status(z.status.as_deref()),
                 record_count: z.record_num,
             })
@@ -622,9 +611,8 @@ impl DnsProvider for HuaweicloudProvider {
 
         // 添加记录类型过滤
         if let Some(ref record_type) = params.record_type {
-            if !record_type.is_empty() {
-                query.push_str(&format!("&type={}", urlencoding::encode(record_type)));
-            }
+            let type_str = Self::record_type_to_string(record_type);
+            query.push_str(&format!("&type={}", urlencoding::encode(&type_str)));
         }
 
         let path = format!("/v2/zones/{domain_id}/recordsets");
