@@ -1,5 +1,5 @@
 import { ChevronRight, Globe, Loader2, RefreshCw, Search, TriangleAlert } from "lucide-react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { getProviderName, ProviderIcon } from "@/components/account/ProviderIcon"
@@ -39,10 +39,14 @@ export function DomainSelectorPage() {
     isAccountLoading,
     isAccountLoadingMore,
     hasMoreDomains,
+    expandedAccounts,
+    toggleExpandedAccount,
+    scrollPosition,
+    setScrollPosition,
   } = useDomainStore()
 
   const [searchQuery, setSearchQuery] = useState("")
-  const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set())
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
 
   // 有效账户（排除错误状态）
   const validAccounts = useMemo(
@@ -54,32 +58,42 @@ export function DomainSelectorPage() {
   useEffect(() => {
     if (validAccounts.length > 0 && expandedAccounts.size === 0) {
       const firstAccountId = validAccounts[0].id
-      setExpandedAccounts(new Set([firstAccountId]))
+      toggleExpandedAccount(firstAccountId)
       // 如果该账户没有缓存，则加载
       if (!domainsByAccount[firstAccountId]) {
         refreshAccount(firstAccountId).catch(() => {})
       }
     }
-  }, [validAccounts, expandedAccounts.size, domainsByAccount, refreshAccount])
+  }, [
+    validAccounts,
+    expandedAccounts.size,
+    domainsByAccount,
+    refreshAccount,
+    toggleExpandedAccount,
+  ])
+
+  // 恢复滚动位置（组件挂载时）
+  useEffect(() => {
+    if (scrollAreaRef.current && scrollPosition > 0) {
+      const viewport = scrollAreaRef.current.querySelector("[data-radix-scroll-area-viewport]")
+      if (viewport) {
+        viewport.scrollTop = scrollPosition
+      }
+    }
+    // 只在挂载时执行，scrollPosition 是从 store 读取的初始值
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // 切换账户展开状态
   const toggleAccount = useCallback(
     (accountId: string) => {
-      setExpandedAccounts((prev) => {
-        const next = new Set(prev)
-        if (next.has(accountId)) {
-          next.delete(accountId)
-        } else {
-          next.add(accountId)
-          // 如果没有缓存，加载域名
-          if (!domainsByAccount[accountId]) {
-            refreshAccount(accountId).catch(() => {})
-          }
-        }
-        return next
-      })
+      toggleExpandedAccount(accountId)
+      // 如果没有缓存，加载域名
+      if (!expandedAccounts.has(accountId) && !domainsByAccount[accountId]) {
+        refreshAccount(accountId).catch(() => {})
+      }
     },
-    [domainsByAccount, refreshAccount]
+    [domainsByAccount, refreshAccount, expandedAccounts, toggleExpandedAccount]
   )
 
   // 手动刷新所有账户
@@ -90,9 +104,16 @@ export function DomainSelectorPage() {
   // 选择域名
   const handleSelectDomain = useCallback(
     (accountId: string, domainId: string) => {
+      // 保存滚动位置
+      if (scrollAreaRef.current) {
+        const viewport = scrollAreaRef.current.querySelector("[data-radix-scroll-area-viewport]")
+        if (viewport) {
+          setScrollPosition(viewport.scrollTop)
+        }
+      }
       navigate(`/domains/${accountId}/${domainId}`)
     },
-    [navigate]
+    [navigate, setScrollPosition]
   )
 
   // 加载更多域名
@@ -258,7 +279,7 @@ export function DomainSelectorPage() {
       </div>
 
       {/* 账户域名列表 */}
-      <ScrollArea className="min-h-0 flex-1">
+      <ScrollArea className="min-h-0 flex-1" ref={scrollAreaRef}>
         <div className="scroll-pb-safe space-y-3 p-4 sm:p-6">
           {isAccountsLoading ? (
             <div className="space-y-3">

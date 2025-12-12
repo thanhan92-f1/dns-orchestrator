@@ -28,6 +28,10 @@ interface DomainState {
   // 后台刷新状态
   isBackgroundRefreshing: boolean
 
+  // UI 状态（会话内保持，不持久化）
+  expandedAccounts: Set<string>
+  scrollPosition: number
+
   // 方法
   loadFromStorage: () => void
   saveToStorage: () => void
@@ -38,12 +42,17 @@ interface DomainState {
   clearAccountCache: (accountId: string) => void
   clearAllCache: () => void
 
+  // UI 状态方法
+  toggleExpandedAccount: (accountId: string) => void
+  setScrollPosition: (position: number) => void
+
   // 便捷 getters
   getDomainsForAccount: (accountId: string) => Domain[]
   getSelectedDomain: () => Domain | null
   isAccountLoading: (accountId: string) => boolean
   isAccountLoadingMore: (accountId: string) => boolean
   hasMoreDomains: (accountId: string) => boolean
+  isAccountExpanded: (accountId: string) => boolean
 }
 
 export const useDomainStore = create<DomainState>((set, get) => ({
@@ -53,6 +62,8 @@ export const useDomainStore = create<DomainState>((set, get) => ({
   loadingAccounts: new Set(),
   loadingMoreAccounts: new Set(),
   isBackgroundRefreshing: false,
+  expandedAccounts: new Set(),
+  scrollPosition: 0,
 
   // 从 localStorage 加载缓存
   loadFromStorage: () => {
@@ -244,5 +255,28 @@ export const useDomainStore = create<DomainState>((set, get) => ({
   // 检查是否有更多域名
   hasMoreDomains: (accountId) => {
     return get().domainsByAccount[accountId]?.hasMore ?? false
+  },
+
+  // 切换账户展开状态
+  toggleExpandedAccount: (accountId) => {
+    set((state) => {
+      const next = new Set(state.expandedAccounts)
+      if (next.has(accountId)) {
+        next.delete(accountId)
+      } else {
+        next.add(accountId)
+      }
+      return { expandedAccounts: next }
+    })
+  },
+
+  // 设置滚动位置
+  setScrollPosition: (position) => {
+    set({ scrollPosition: position })
+  },
+
+  // 检查账户是否展开
+  isAccountExpanded: (accountId) => {
+    return get().expandedAccounts.has(accountId)
   },
 }))
